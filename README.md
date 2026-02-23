@@ -1,4 +1,4 @@
-# NostalgiaTV — Desktop Port
+# NostalgicTV — Desktop Port
 
 A Python/web port of the NostalgicTV Android app. Run it on Windows or Linux to get a live TV-style program guide powered by your Plex media server.
 
