@@ -1,0 +1,12 @@
+{
+  "plex_url": "http://174.126.175.190:26664",
+  "plex_token": "w5MgpjxsLmupXz-V1GnQ",
+  "library_ids": [
+    "1"
+  ],
+  "schedule_days_ahead": 3,
+  "align_to_quarter_hour": true,
+  "commercial_count": 0,
+  "port": 5000,
+  "host": "0.0.0.0"
+}

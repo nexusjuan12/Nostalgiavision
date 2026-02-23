@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} — Nostalgiavision</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#000;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;overflow:hidden}
+
+#container{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+
+video{width:100%;height:100%;object-fit:contain;background:#000}
+
+/* Overlay — shown on hover or while loading */
+#overlay{
+  position:absolute;inset:0;background:linear-gradient(to top,#000c 0%,transparent 40%,transparent 70%,#0008 100%);
+  opacity:0;transition:opacity .3s;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between
+}
+#container:hover #overlay,#overlay.visible{opacity:1;pointer-events:auto}
+
+#top-bar{display:flex;align-items:center;gap:14px;padding:16px 20px}
+#poster{width:48px;height:72px;border-radius:4px;object-fit:cover;flex-shrink:0;
+  background:#ffffff18;display:none}
+#title{font-size:16px;font-weight:600;text-shadow:0 1px 4px #000a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#back-btn{margin-left:auto;padding:6px 14px;border:1px solid #fff6;border-radius:6px;
+  background:#fff1;cursor:pointer;font-size:13px;color:#fff;text-decoration:none;flex-shrink:0}
+#back-btn:hover{background:#fff2}
+
+#bottom-bar{padding:10px 20px 20px}
+#progress-wrap{position:relative;height:4px;background:#ffffff33;border-radius:2px;
+  cursor:pointer;margin-bottom:12px;transition:height .15s}
+#progress-wrap:hover{height:6px}
+#progress-fill{height:100%;background:#6366f1;border-radius:2px;pointer-events:none;min-width:0}
+#progress-handle{position:absolute;top:50%;right:-6px;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;background:#6366f1;pointer-events:none;opacity:0;transition:opacity .15s}
+#progress-wrap:hover #progress-handle{opacity:1}
+
+#controls{display:flex;align-items:center;gap:14px}
+.ctrl-btn{background:none;border:none;color:#fff;cursor:pointer;padding:4px;
+  font-size:20px;line-height:1;opacity:.9;transition:opacity .15s}
+.ctrl-btn:hover{opacity:1}
+#time{font-size:12px;color:#fffc;margin-left:4px}
+#vol-wrap{display:flex;align-items:center;gap:8px}
+#vol-slider{-webkit-appearance:none;appearance:none;width:80px;height:3px;
+  background:#ffffff44;border-radius:2px;outline:none;cursor:pointer}
+#vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;background:#fff;cursor:pointer}
+#fullscreen-btn{margin-left:auto}
+
+/* Loading spinner */
+#spinner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;background:#000a}
+#spinner .ring{width:48px;height:48px;border:3px solid #ffffff22;border-top-color:#6366f1;
+  border-radius:50%;animation:spin .8s linear infinite}
+#spinner .msg{font-size:14px;color:#fff9}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Error */
+#error-box{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;background:#000d;padding:24px;text-align:center}
+#error-box .icon{font-size:40px}
+#error-box .msg{font-size:14px;color:#fca5a5;max-width:400px}
+#error-box a{color:#818cf8;font-size:13px}
+</style>
+</head>
+<body>
+<div id="container">
+  <video id="video" playsinline></video>
+
+  <div id="overlay">
+    <div id="top-bar">
+      {% if thumb_url %}
+      <img id="poster" src="{{ thumb_url }}" alt="" onload="this.style.display='block'" onerror="this.style.display='none'">
+      {% endif %}
+      <div id="title">{{ title }}</div>
+      <a id="back-btn" href="javascript:history.back()">← Guide</a>
+    </div>
+    <div id="bottom-bar">
+      <div id="progress-wrap" id="seek-bar">
+        <div id="progress-fill" style="width:0%"></div>
+        <div id="progress-handle"></div>
+      </div>
+      <div id="controls">
+        <button class="ctrl-btn" id="btn-play" title="Play/Pause">⏸</button>
+        <button class="ctrl-btn" id="btn-back10" title="-10s">⏪</button>
+        <button class="ctrl-btn" id="btn-fwd10" title="+10s">⏩</button>
+        <span id="time">0:00 / 0:00</span>
+        <div id="vol-wrap">
+          <button class="ctrl-btn" id="btn-mute" title="Mute">🔊</button>
+          <input type="range" id="vol-slider" min="0" max="1" step="0.02" value="1">
+        </div>
+        <button class="ctrl-btn" id="fullscreen-btn" title="Fullscreen">⛶</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="spinner">
+    <div class="ring"></div>
+    <div class="msg" id="spinner-msg">Loading stream...</div>
+  </div>
+
+  <div id="error-box">
+    <div class="icon">⚠️</div>
+    <div class="msg" id="error-msg"></div>
+    <a href="javascript:location.reload()">Try again</a>
+    <a href="/">Back to guide</a>
+  </div>
+</div>
+
+<!-- hls.js for HLS playback (required on non-Safari browsers) -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<script>
+const video   = document.getElementById('video');
+const spinner = document.getElementById('spinner');
+const spinMsg = document.getElementById('spinner-msg');
+const errBox  = document.getElementById('error-box');
+const errMsg  = document.getElementById('error-msg');
+const HLS_URL = {{ hls_url | tojson }};
+
+function showError(msg) {
+  spinner.style.display = 'none';
+  errBox.style.display  = 'flex';
+  errMsg.textContent    = msg;
+}
+
+function fmtTime(s) {
+  s = Math.floor(s || 0);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+// ── HLS setup ─────────────────────────────────────────────────────────────────
+if (Hls.isSupported()) {
+  const hls = new Hls({
+    enableWorker: true,
+    lowLatencyMode: false,
+    backBufferLength: 90,
+  });
+  hls.loadSource(HLS_URL);
+  hls.attachMedia(video);
+
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    spinMsg.textContent = 'Starting playback...';
+    video.play().catch(() => {});
+  });
+
+  hls.on(Hls.Events.ERROR, (event, data) => {
+    if (data.fatal) {
+      switch (data.type) {
+        case Hls.ErrorTypes.NETWORK_ERROR:
+          spinMsg.textContent = 'Network error — retrying...';
+          hls.startLoad();
+          break;
+        case Hls.ErrorTypes.MEDIA_ERROR:
+          hls.recoverMediaError();
+          break;
+        default:
+          showError(`Playback failed: ${data.details}\n\nThe file may use a codec the browser cannot decode even with transcoding.`);
+      }
+    }
+  });
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+  // Safari — native HLS
+  video.src = HLS_URL;
+  video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
+} else {
+  showError('Your browser does not support HLS playback. Try Chrome, Firefox, or Safari.');
+}
+
+// ── Player controls ───────────────────────────────────────────────────────────
+video.addEventListener('waiting', () => {
+  spinner.style.display = 'flex';
+  spinMsg.textContent = 'Buffering...';
+});
+video.addEventListener('playing', () => { spinner.style.display = 'none'; });
+video.addEventListener('canplay',  () => { spinner.style.display = 'none'; });
+
+// Progress bar
+const progressFill = document.getElementById('progress-fill');
+const progressWrap = document.getElementById('progress-wrap');
+const timeEl       = document.getElementById('time');
+
+video.addEventListener('timeupdate', () => {
+  if (!video.duration) return;
+  const pct = (video.currentTime / video.duration) * 100;
+  progressFill.style.width = pct + '%';
+  timeEl.textContent = fmtTime(video.currentTime) + ' / ' + fmtTime(video.duration);
+});
+
+progressWrap.addEventListener('click', e => {
+  const rect = progressWrap.getBoundingClientRect();
+  const pct  = (e.clientX - rect.left) / rect.width;
+  video.currentTime = pct * video.duration;
+});
+
+// Play/Pause
+const btnPlay = document.getElementById('btn-play');
+video.addEventListener('pause', () => btnPlay.textContent = '▶');
+video.addEventListener('play',  () => btnPlay.textContent = '⏸');
+btnPlay.addEventListener('click', () => video.paused ? video.play() : video.pause());
+
+// Skip
+document.getElementById('btn-back10').addEventListener('click', () => { video.currentTime -= 10; });
+document.getElementById('btn-fwd10').addEventListener('click',  () => { video.currentTime += 10; });
+
+// Volume
+const volSlider = document.getElementById('vol-slider');
+const btnMute   = document.getElementById('btn-mute');
+volSlider.addEventListener('input', () => {
+  video.volume = parseFloat(volSlider.value);
+  video.muted  = video.volume === 0;
+  btnMute.textContent = video.muted ? '🔇' : '🔊';
+});
+btnMute.addEventListener('click', () => {
+  video.muted = !video.muted;
+  btnMute.textContent = video.muted ? '🔇' : '🔊';
+  volSlider.value = video.muted ? 0 : video.volume;
+});
+
+// Fullscreen
+const fsBtn = document.getElementById('fullscreen-btn');
+fsBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.getElementById('container').requestFullscreen();
+    fsBtn.textContent = '⊠';
+  } else {
+    document.exitFullscreen();
+    fsBtn.textContent = '⛶';
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  switch(e.key) {
+    case ' ':     e.preventDefault(); video.paused ? video.play() : video.pause(); break;
+    case 'ArrowLeft':  e.preventDefault(); video.currentTime -= 10; break;
+    case 'ArrowRight': e.preventDefault(); video.currentTime += 10; break;
+    case 'm': case 'M': video.muted = !video.muted; btnMute.textContent = video.muted ? '🔇' : '🔊'; break;
+    case 'f': case 'F': fsBtn.click(); break;
+  }
+});
+
+// Auto-hide overlay after 3s of no mouse movement
+let hideTimer;
+document.addEventListener('mousemove', () => {
+  document.getElementById('overlay').classList.add('visible');
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    if (!video.paused) document.getElementById('overlay').classList.remove('visible');
+  }, 3000);
+});
+</script>
+</body>
+</html>

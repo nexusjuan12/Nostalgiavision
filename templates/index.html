@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nostalgiavision</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0F0F12;--surface:#1A1A21;--surface-el:#232330;--text:#E8E8EB;
+  --text-sec:#9E9EA8;--accent:#6366F1;--accent-hover:#818cf8;
+  --border:#2A2A35;--divider:#1F1F28;--success:#22c55e;--error:#ef4444;
+  --warning:#f59e0b;--radius:8px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;line-height:1.5}
+
+/* Layout */
+.app{max-width:1200px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 0;border-bottom:1px solid var(--divider);margin-bottom:20px}
+header h1{font-size:22px;font-weight:700;letter-spacing:-.5px}
+header h1 span{color:var(--accent)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--error);display:inline-block;margin-right:6px}
+.status-dot.ok{background:var(--success)}
+.status-text{font-size:12px;color:var(--text-sec);display:flex;align-items:center;gap:6px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--divider);margin-bottom:24px}
+.tab{padding:10px 22px;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;
+  margin-bottom:-2px;font-weight:500;transition:all .2s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;margin-bottom:14px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.card-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px;font-weight:500}
+input[type=text],input[type=number],input[type=password],select,textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:8px 12px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select{cursor:pointer}
+select option{background:var(--surface);color:var(--text)}
+textarea{resize:vertical;min-height:80px;font-family:inherit}
+
+/* Buttons */
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;
+  font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:var(--surface-el);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent)}
+.btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid var(--error)}
+.btn-danger:hover{background:var(--error);color:#fff}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Badges */
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
+.badge-movie{background:#7c3aed22;color:#a78bfa}
+.badge-series{background:#06b6d422;color:#67e8f9}
+.badge-mixed{background:#f59e0b22;color:#fbbf24}
+.badge-music{background:#22c55e22;color:#4ade80}
+.badge-weather{background:#0ea5e922;color:#38bdf8}
+.badge-custom{background:#ec489922;color:#f472b6}
+
+/* Progress */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-bar .fill{height:100%;background:var(--accent);transition:width .3s}
+.status-msg{font-size:12px;color:var(--text-sec);margin-top:6px}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
+.alert-success{background:#14532d44;border:1px solid var(--success);color:#4ade80}
+.alert-error{background:#7f1d1d44;border:1px solid var(--error);color:#fca5a5}
+.alert-info{background:#1e3a5f44;border:1px solid #3b82f6;color:#93c5fd}
+
+/* EPG Guide */
+.guide-controls{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.guide-time{font-size:12px;color:var(--text-sec)}
+.guide-container{overflow-x:auto}
+.guide-table{width:100%;border-collapse:collapse;min-width:700px}
+.guide-table th{background:var(--surface-el);padding:6px 10px;text-align:left;
+  font-size:11px;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--divider);
+  position:sticky;top:0;z-index:1}
+.guide-row{border-bottom:1px solid var(--divider)}
+.guide-row:hover{background:var(--surface-el)}
+.guide-ch-num{width:60px;padding:10px 10px;font-size:12px;color:var(--accent);font-weight:700}
+.guide-ch-name{width:130px;padding:10px 6px;font-size:12px;font-weight:500}
+.guide-programs{padding:4px 6px;position:relative}
+.prog-strip{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden}
+.prog-item{background:var(--surface-el);border:1px solid var(--border);border-radius:4px;
+  display:flex;gap:8px;align-items:flex-start;
+  padding:6px 8px;flex-shrink:0;cursor:pointer;transition:border-color .15s;min-width:140px;max-width:300px}
+.prog-item:hover{border-color:var(--accent)}
+.prog-item.now-playing{border-color:var(--accent);background:#6366f115}
+.prog-thumb{width:38px;height:56px;border-radius:3px;object-fit:cover;flex-shrink:0;
+  background:var(--border);display:block}
+.prog-thumb[data-src]{opacity:0;transition:opacity .2s}
+.prog-thumb.loaded{opacity:1}
+.prog-text{min-width:0;flex:1}
+.prog-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-sub{font-size:11px;color:var(--text-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-time{font-size:10px;color:var(--text-sec);margin-top:2px}
+.no-prog{font-size:12px;color:var(--text-sec);padding:8px 6px;font-style:italic}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:#00000080;z-index:100;
+  display:flex;align-items:center;justify-content:center;display:none}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;max-width:480px;width:90%;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+/* Channel list (Channels tab) */
+.ch-list{display:flex;flex-direction:column;gap:8px}
+.ch-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 14px;display:flex;align-items:center;gap:10px}
+.ch-item.hidden-ch{opacity:.45}
+.ch-num{font-size:13px;font-weight:700;color:var(--accent);min-width:40px}
+.ch-name{flex:1;font-size:13px;font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-actions{display:flex;gap:6px;flex-shrink:0}
+.ch-logo{width:40px;height:40px;border-radius:4px;flex-shrink:0;overflow:hidden;position:relative;
+  background:var(--surface-el);border:1px solid var(--border);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-sec)}
+.ch-logo:hover{border-color:var(--accent)}
+.ch-logo img{width:100%;height:100%;object-fit:cover;display:block}
+.badge-edited{background:#f59e0b22;color:#fbbf24}
+
+/* Settings */
+.settings-section{margin-bottom:24px}
+.settings-section h3{font-size:14px;font-weight:600;margin-bottom:12px;
+  padding-bottom:8px;border-bottom:1px solid var(--divider)}
+
+/* Tag input */
+.tag-input{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;padding:6px 10px;cursor:text;min-height:40px}
+.tag-input:focus-within{border-color:var(--accent)}
+.tag{background:var(--accent);color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;
+  display:flex;align-items:center;gap:4px}
+.tag .remove{cursor:pointer;opacity:.8;font-size:10px}
+.tag .remove:hover{opacity:1}
+.tag-input input{border:none;background:transparent;color:var(--text);font-size:13px;
+  outline:none;min-width:80px;flex:1}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.info-stat{background:var(--surface-el);border-radius:6px;padding:12px 16px}
+.info-stat .val{font-size:24px;font-weight:700;color:var(--accent)}
+.info-stat .lbl{font-size:11px;color:var(--text-sec);margin-top:2px}
+
+/* Utilities */
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.mt-16{margin-top:16px}
+.text-sec{color:var(--text-sec)}
+.text-sm{font-size:12px}
+.flex{display:flex}
+.gap-8{gap:8px}
+.items-center{align-items:center}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Nostalgia<span>vision</span></h1>
+    <div class="status-text">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-label">Checking...</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('guide')">Guide</div>
+    <div class="tab" onclick="switchTab('channels')">Channels</div>
+    <div class="tab" onclick="switchTab('builder')">Channel Builder</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
+  </div>
+
+  <!-- ── GUIDE TAB ── -->
+  <div class="tab-content active" id="tab-guide">
+    <div class="guide-controls">
+      <button class="btn btn-secondary btn-sm" onclick="shiftTime(-2)">◀ -2h</button>
+      <button class="btn btn-secondary btn-sm" onclick="shiftTime(2)">+2h ▶</button>
+      <button class="btn btn-secondary btn-sm" onclick="goToNow()">Now</button>
+      <span class="guide-time" id="guide-time-label"></span>
+      <button class="btn btn-primary btn-sm" onclick="buildSchedule()" id="btn-build">
+        Build Schedule
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="loadGuide()">Refresh</button>
+    </div>
+    <div id="schedule-status-bar" class="hidden">
+      <div class="status-msg" id="schedule-msg"></div>
+      <div class="progress-bar"><div class="fill" id="schedule-fill" style="width:0%"></div></div>
+    </div>
+    <div class="guide-container">
+      <table class="guide-table" id="guide-table">
+        <thead>
+          <tr>
+            <th>Ch</th>
+            <th>Name</th>
+            <th>Now Playing → Upcoming</th>
+          </tr>
+        </thead>
+        <tbody id="guide-body">
+          <tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-sec)">
+            Loading guide...
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── CHANNELS TAB ── -->
+  <div class="tab-content" id="tab-channels">
+    <div class="card">
+      <div class="card-row">
+        <span class="text-sec text-sm">Manage which channels appear in the guide.</span>
+        <button class="btn btn-primary btn-sm" onclick="switchTab('builder')">+ New Channel</button>
+      </div>
+    </div>
+    <div class="ch-list" id="ch-list">
+      <div class="text-sec text-sm" style="padding:20px;text-align:center">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── CHANNEL BUILDER TAB ── -->
+  <div class="tab-content" id="tab-builder">
+    <div class="card">
+      <h3>Create Custom Channel</h3>
+      <div id="builder-alert"></div>
+      <div class="form-group">
+        <label>Channel Number (must be unique, e.g. 2001)</label>
+        <input type="number" id="b-number" placeholder="2001" min="2000" max="9999">
+      </div>
+      <div class="form-group">
+        <label>Channel Name</label>
+        <input type="text" id="b-name" placeholder="My Channel">
+      </div>
+      <div class="form-group">
+        <label>Content Type</label>
+        <select id="b-type">
+          <option value="mixed">Mixed (movies + series)</option>
+          <option value="movie">Movies only</option>
+          <option value="series">Series / Episodes only</option>
+          <option value="music">Music</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Genres (press Enter after each)</label>
+        <div class="tag-input" id="b-genres-container" onclick="focusTagInput('b-genres-input')">
+          <input type="text" id="b-genres-input" placeholder="e.g. Comedy" onkeydown="addTag(event,'b-genres')">
+        </div>
+        <input type="hidden" id="b-genres" value="[]">
+      </div>
+      <div class="form-group">
+        <label>Studios / Networks (press Enter after each)</label>
+        <div class="tag-input" id="b-studios-container" onclick="focusTagInput('b-studios-input')">
+          <input type="text" id="b-studios-input" placeholder="e.g. HBO" onkeydown="addTag(event,'b-studios')">
+        </div>
+        <input type="hidden" id="b-studios" value="[]">
+      </div>
+      <div class="form-group">
+        <label>Keywords (press Enter after each)</label>
+        <div class="tag-input" id="b-keywords-container" onclick="focusTagInput('b-keywords-input')">
+          <input type="text" id="b-keywords-input" placeholder="e.g. Christmas" onkeydown="addTag(event,'b-keywords')">
+        </div>
+        <input type="hidden" id="b-keywords" value="[]">
+      </div>
+      <div class="form-group">
+        <label>Max Year (leave blank for no limit)</label>
+        <input type="number" id="b-max-year" placeholder="e.g. 1999">
+      </div>
+      <div class="form-group">
+        <label>Sorting Method</label>
+        <select id="b-sorting">
+          <option value="RANDOM">Random (default)</option>
+          <option value="CYCLIC_SHUFFLE">Cyclic Shuffle (season-grouped)</option>
+          <option value="BLOCK_SHUFFLE">Block Shuffle (themed blocks, shuffled)</option>
+          <option value="BLOCK_CYCLIC">Block Cyclic (themed blocks, ordered)</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="previewChannel()">Preview Match Count</button>
+        <button class="btn btn-primary" onclick="createChannel()">Create Channel</button>
+      </div>
+      <div class="mt-8 text-sm text-sec" id="preview-result"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS TAB ── -->
+  <div class="tab-content" id="tab-settings">
+    <div class="settings-section">
+      <h3>Plex Connection</h3>
+      <div id="conn-alert"></div>
+      <div class="form-group">
+        <label>Plex Server URL</label>
+        <input type="text" id="s-plex-url" placeholder="http://192.168.1.100:32400">
+      </div>
+      <div class="form-group">
+        <label>Plex Token</label>
+        <input type="password" id="s-plex-token" placeholder="Your X-Plex-Token">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveConnection()">Save &amp; Connect</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Library Sync</h3>
+      <div class="text-sec text-sm" style="margin-bottom:10px">
+        Select the Plex library sections to use for channel content.
+      </div>
+      <div id="lib-alert"></div>
+      <div id="lib-list" class="text-sec text-sm">Connect to Plex to list libraries.</div>
+      <div class="btn-group mt-8">
+        <button class="btn btn-secondary" onclick="loadLibraries()">Refresh Libraries</button>
+        <button class="btn btn-primary" onclick="startSync()" id="btn-sync">Sync Selected</button>
+      </div>
+      <div id="sync-status-bar" class="hidden mt-8">
+        <div class="status-msg" id="sync-msg"></div>
+        <div class="progress-bar"><div class="fill" id="sync-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Schedule Settings</h3>
+      <div class="form-group">
+        <label>Days to schedule ahead</label>
+        <input type="number" id="s-days" value="3" min="1" max="14">
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="s-align" checked style="width:auto;margin-right:6px">
+          Align programs to quarter-hour boundaries (00/15/30/45 min)
+        </label>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="buildSchedule()">Build Schedule Now</button>
+        <button class="btn btn-danger btn-sm" onclick="clearSchedule()">Clear All Programs</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Library Statistics</h3>
+      <div class="info-grid" id="lib-stats">
+        <div class="info-stat"><div class="val" id="stat-movies">—</div><div class="lbl">Movies</div></div>
+        <div class="info-stat"><div class="val" id="stat-episodes">—</div><div class="lbl">Episodes</div></div>
+        <div class="info-stat"><div class="val" id="stat-shows">—</div><div class="lbl">Shows</div></div>
+      </div>
+      <div class="text-sm text-sec mt-8" id="cache-info"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Program detail modal -->
+<div class="modal-overlay" id="prog-modal">
+  <div class="modal" style="max-width:540px">
+    <div style="display:flex;gap:14px">
+      <img id="modal-thumb" src="" alt="" style="width:100px;height:150px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--surface-el);display:none">
+      <div style="flex:1;min-width:0">
+        <h3 id="modal-title" style="margin-bottom:4px"></h3>
+        <div class="text-sec text-sm" id="modal-sub"></div>
+        <div class="text-sm mt-8" id="modal-summary" style="max-height:80px;overflow:hidden;color:var(--text-sec)"></div>
+        <div class="text-sm text-sec mt-8" id="modal-meta"></div>
+      </div>
+    </div>
+
+    <!-- Playback options -->
+    <div class="mt-16" id="play-section">
+      <div style="font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Play</div>
+      <div class="btn-group" id="play-btns">
+        <button class="btn btn-primary" id="btn-plex-web" onclick="openPlexWeb()" disabled>
+          Open in Plex Web
+        </button>
+        <button class="btn btn-secondary" id="btn-stream" onclick="openStream()" disabled>
+          ▶ Watch
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-copy-url" onclick="copyStreamUrl()" style="display:none">
+          Copy Raw URL
+        </button>
+      </div>
+
+      <!-- Plex clients -->
+      <div id="clients-section" class="mt-8" style="display:none">
+        <div style="font-size:12px;color:var(--text-sec);margin-bottom:6px">Send to Plex Player:</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="client-select" style="flex:1;min-width:140px">
+            <option value="">Select a player...</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="playOnClient()">Play</button>
+        </div>
+      </div>
+
+      <div id="play-loading" class="text-sec text-sm mt-8" style="display:none">Loading playback options...</div>
+      <div id="play-error" class="alert alert-error mt-8" style="display:none"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit channel modal -->
+<div class="modal-overlay" id="ch-edit-modal">
+  <div class="modal" style="max-width:520px">
+    <h3 id="ch-edit-title">Edit Channel</h3>
+    <div id="ch-edit-alert"></div>
+    <input type="hidden" id="ch-edit-number">
+    <div class="form-group">
+      <label>Channel Name</label>
+      <input type="text" id="ch-edit-name" placeholder="Channel Name">
+    </div>
+    <div class="form-group">
+      <label>Content Type</label>
+      <select id="ch-edit-type">
+        <option value="mixed">Mixed (movies + series)</option>
+        <option value="movie">Movies only</option>
+        <option value="series">Series / Episodes only</option>
+        <option value="music">Music</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Genres (press Enter after each)</label>
+      <div class="tag-input" id="ch-edit-genres-container" onclick="focusTagInput('ch-edit-genres-input')">
+        <input type="text" id="ch-edit-genres-input" placeholder="e.g. Comedy" onkeydown="addEditTag(event,'genres')">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Studios / Networks (press Enter after each)</label>
+      <div class="tag-input" id="ch-edit-studios-container" onclick="focusTagInput('ch-edit-studios-input')">
+        <input type="text" id="ch-edit-studios-input" placeholder="e.g. HBO" onkeydown="addEditTag(event,'studios')">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Keywords (press Enter after each)</label>
+      <div class="tag-input" id="ch-edit-keywords-container" onclick="focusTagInput('ch-edit-keywords-input')">
+        <input type="text" id="ch-edit-keywords-input" placeholder="e.g. Christmas" onkeydown="addEditTag(event,'keywords')">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Max Year (leave blank for no limit)</label>
+      <input type="number" id="ch-edit-max-year" placeholder="e.g. 1999">
+    </div>
+    <div class="form-group">
+      <label>Sorting Method</label>
+      <select id="ch-edit-sorting">
+        <option value="RANDOM">Random (default)</option>
+        <option value="CYCLIC_SHUFFLE">Cyclic Shuffle (season-grouped)</option>
+        <option value="BLOCK_SHUFFLE">Block Shuffle (themed blocks, shuffled)</option>
+        <option value="BLOCK_CYCLIC">Block Cyclic (themed blocks, ordered)</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveChannelEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let guideStart = Math.floor(Date.now() / 1000);
+let guideHours = 4;
+let selectedLibraries = new Set();
+let statusPoll = null;
+
+// ── Utility ────────────────────────────────────────────────────────────────────
+function fmt(ms) {
+  const d = new Date(ms);
+  return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(ms) {
+  const d = new Date(ms);
+  return d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}) +
+         ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+function alert$(el, msg, type) {
+  el.innerHTML = msg
+    ? `<div class="alert alert-${type}">${msg}</div>`
+    : '';
+}
+function typeBadge(type) {
+  const map = {movie:'movie',series:'series',mixed:'mixed',music:'music',weather:'weather'};
+  const t = map[type] || 'mixed';
+  return `<span class="badge badge-${t}">${t}</span>`;
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab,.tab-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    if (['guide','channels','builder','settings'][i] === id) el.classList.add('active');
+  });
+  if (id === 'guide') loadGuide();
+  if (id === 'channels') loadChannelList();
+  if (id === 'settings') loadSettings();
+}
+
+// ── Status polling ─────────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const dot = document.getElementById('status-dot');
+    const lbl = document.getElementById('status-label');
+    if (d.connected) {
+      dot.className = 'status-dot ok';
+      lbl.textContent = 'Connected to Plex';
+    } else {
+      dot.className = 'status-dot';
+      lbl.textContent = d.has_token ? 'Cannot reach server' : 'Not connected';
+    }
+    // Update stats
+    if (d.content_counts) {
+      document.getElementById('stat-movies').textContent = d.content_counts.movies.toLocaleString();
+      document.getElementById('stat-episodes').textContent = d.content_counts.episodes.toLocaleString();
+      document.getElementById('stat-shows').textContent = d.content_counts.shows.toLocaleString();
+    }
+    if (d.cache && d.cache.cached_at) {
+      document.getElementById('cache-info').textContent =
+        'Last synced: ' + new Date(d.cache.cached_at * 1000).toLocaleString();
+    }
+    // Sync status
+    const ss = d.sync_status;
+    const syncBar = document.getElementById('sync-status-bar');
+    if (ss && ss.running) {
+      syncBar.classList.remove('hidden');
+      document.getElementById('sync-msg').textContent = ss.message;
+      const pct = ss.total > 0 ? Math.round(ss.progress / ss.total * 100) : 0;
+      document.getElementById('sync-fill').style.width = pct + '%';
+    } else if (syncBar && !syncBar.classList.contains('hidden') && ss && !ss.running) {
+      document.getElementById('sync-msg').textContent = ss.message || 'Done';
+      document.getElementById('sync-fill').style.width = '100%';
+      setTimeout(() => syncBar.classList.add('hidden'), 3000);
+    }
+    // Schedule status
+    const schBar = document.getElementById('schedule-status-bar');
+    const sch = d.schedule_status;
+    if (sch && sch.running) {
+      schBar.classList.remove('hidden');
+      document.getElementById('schedule-msg').textContent = sch.message;
+      const pct = sch.total > 0 ? Math.round(sch.progress / sch.total * 100) : 0;
+      document.getElementById('schedule-fill').style.width = pct + '%';
+      document.getElementById('btn-build').disabled = true;
+    } else if (schBar && sch && !sch.running) {
+      document.getElementById('schedule-msg').textContent = sch.message || 'Done';
+      document.getElementById('schedule-fill').style.width = '100%';
+      document.getElementById('btn-build').disabled = false;
+      if (!schBar.classList.contains('hidden')) {
+        loadGuide();
+        setTimeout(() => schBar.classList.add('hidden'), 3000);
+      }
+    }
+  } catch(e) {}
+}
+setInterval(pollStatus, 3000);
+pollStatus();
+
+// ── Guide ──────────────────────────────────────────────────────────────────────
+function shiftTime(hours) { guideStart += hours * 3600; loadGuide(); }
+function goToNow() { guideStart = Math.floor(Date.now() / 1000); loadGuide(); }
+
+// Program store — keyed by integer index so onclick never embeds unsafe JSON
+const _programs = [];
+
+async function loadGuide() {
+  document.getElementById('guide-time-label').textContent =
+    'From: ' + fmtDate(guideStart * 1000);
+  const r = await fetch(`/api/guide?start=${guideStart}&hours=${guideHours}`);
+  const d = await r.json();
+  const tbody = document.getElementById('guide-body');
+  if (!d.channels || d.channels.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-sec)">No guide data — sync your library and build the schedule first.</td></tr>';
+    return;
+  }
+  // Clear program store on each guide reload
+  _programs.length = 0;
+
+  const nowMs = Date.now();
+  let rows = '';
+  for (const ch of d.channels) {
+    const progs = ch.programs || [];
+    let progsHtml = '';
+    if (progs.length === 0) {
+      progsHtml = '<div class="no-prog">No programs scheduled</div>';
+    } else {
+      for (const p of progs) {
+        const idx = _programs.length;
+        _programs.push(p);
+        const isNow = p.start_time <= nowMs && p.end_time > nowMs;
+        const cls = isNow ? 'prog-item now-playing' : 'prog-item';
+        const sub = p.type === 'episode'
+          ? (p.episode_title || (p.season_number ? `S${p.season_number}E${p.episode_number}` : ''))
+          : (p.content_rating || '');
+        // Use data-idx — never embed raw JSON in onclick attributes
+        const thumbSrc = p.thumb_url
+          ? `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`
+          : '';
+        progsHtml += `<div class="${cls}" data-idx="${idx}">
+          <img class="prog-thumb" data-src="${thumbSrc}" alt="" onerror="this.style.display='none'">
+          <div class="prog-text">
+            <div class="prog-title">${escHtml(p.title || 'Unknown')}</div>
+            ${sub ? `<div class="prog-sub">${escHtml(sub)}</div>` : ''}
+            <div class="prog-time">${fmt(p.start_time)}–${fmt(p.end_time)}</div>
+          </div>
+        </div>`;
+      }
+    }
+    rows += `<tr class="guide-row">
+      <td class="guide-ch-num">${ch.number}</td>
+      <td class="guide-ch-name">${escHtml(ch.name)}</td>
+      <td class="guide-programs"><div class="prog-strip">${progsHtml}</div></td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+
+  // Attach click handlers after DOM is written
+  tbody.querySelectorAll('.prog-item[data-idx]').forEach(el => {
+    el.addEventListener('click', () => showProgram(_programs[parseInt(el.dataset.idx)]));
+  });
+
+  // Lazy-load thumbnails using IntersectionObserver so we only fetch
+  // images that are actually visible in the viewport
+  const imgObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      const src = img.dataset.src;
+      if (src) {
+        img.src = src;
+        img.onload = () => img.classList.add('loaded');
+        delete img.dataset.src;
+      }
+      obs.unobserve(img);
+    });
+  }, { rootMargin: '200px' });
+
+  tbody.querySelectorAll('.prog-thumb[data-src]').forEach(img => imgObserver.observe(img));
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── Program modal + playback ───────────────────────────────────────────────────
+let _currentStreamUrl = null;
+let _currentPlexWebUrl = null;
+let _currentRatingKey = null;
+let _currentMediaType = null;
+
+function showProgram(p) {
+  _currentRatingKey = p.rating_key;
+  _currentMediaType = p.type;
+  _currentStreamUrl = null;
+  _currentPlexWebUrl = null;
+
+  // Populate header
+  document.getElementById('modal-title').textContent = p.show_title || p.title || 'Unknown';
+  let sub = '';
+  if (p.type === 'episode' && p.episode_title) sub = p.episode_title;
+  if (p.season_number) sub += (sub ? ' — ' : '') + `S${String(p.season_number).padStart(2,'0')}E${String(p.episode_number || 0).padStart(2,'0')}`;
+  document.getElementById('modal-sub').textContent = sub;
+  document.getElementById('modal-summary').textContent = p.summary || '';
+  const meta = [
+    p.content_rating, p.video_resolution,
+    p.audio_codec ? p.audio_codec.toUpperCase() : null,
+    fmt(p.start_time) + '–' + fmt(p.end_time)
+  ].filter(Boolean).join(' · ');
+  document.getElementById('modal-meta').textContent = meta;
+
+  // Thumbnail — route through /api/thumb proxy (avoids CORS & keeps token server-side)
+  const thumb = document.getElementById('modal-thumb');
+  if (p.thumb_url) {
+    thumb.src = `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`;
+    thumb.style.display = 'block';
+    thumb.onerror = () => { thumb.style.display = 'none'; };
+  } else {
+    thumb.style.display = 'none';
+  }
+
+  // Reset play section
+  document.getElementById('btn-plex-web').disabled = true;
+  document.getElementById('btn-stream').disabled = true;
+  document.getElementById('btn-copy-url').style.display = 'none';
+  document.getElementById('clients-section').style.display = 'none';
+  document.getElementById('play-loading').style.display = 'block';
+  document.getElementById('play-error').style.display = 'none';
+
+  document.getElementById('prog-modal').classList.add('open');
+
+  // Async: fetch stream info + clients
+  if (p.rating_key) {
+    loadPlaybackOptions(p.rating_key, p.type);
+  } else {
+    document.getElementById('play-loading').style.display = 'none';
+    document.getElementById('play-error').textContent = 'No media key — cannot play this item.';
+    document.getElementById('play-error').style.display = 'block';
+  }
+}
+
+async function loadPlaybackOptions(ratingKey, mediaType) {
+  try {
+    // Fetch stream info and clients in parallel
+    const [streamRes, clientsRes] = await Promise.all([
+      fetch(`/api/stream/${ratingKey}`),
+      fetch('/api/clients'),
+    ]);
+    const streamData = await streamRes.json();
+    const clientsData = await clientsRes.json();
+
+    document.getElementById('play-loading').style.display = 'none';
+
+    if (streamData.stream_url) {
+      _currentStreamUrl = streamData.stream_url;
+      _currentPlexWebUrl = streamData.plex_web_url;
+      document.getElementById('btn-stream').disabled = false;
+      document.getElementById('btn-copy-url').style.display = 'inline-flex';
+      if (streamData.plex_web_url) {
+        document.getElementById('btn-plex-web').disabled = false;
+      }
+    } else if (streamData.error) {
+      document.getElementById('play-error').textContent = streamData.error;
+      document.getElementById('play-error').style.display = 'block';
+    }
+
+    // Plex clients
+    const clients = clientsData.clients || [];
+    if (clients.length > 0) {
+      const sel = document.getElementById('client-select');
+      sel.innerHTML = '<option value="">Select a player...</option>' +
+        clients.map(c =>
+          `<option value="${c.machineIdentifier || c.name}">${c.name || c.machineIdentifier}</option>`
+        ).join('');
+      document.getElementById('clients-section').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('play-loading').style.display = 'none';
+    document.getElementById('play-error').textContent = 'Failed to load playback options.';
+    document.getElementById('play-error').style.display = 'block';
+  }
+}
+
+function openPlexWeb() {
+  if (_currentPlexWebUrl) window.open(_currentPlexWebUrl, '_blank');
+}
+
+function openStream() {
+  // Open the built-in HLS player (fixes AC3/DTS audio via server-side transcode)
+  if (_currentRatingKey) window.open(`/watch/${_currentRatingKey}`, '_blank');
+}
+
+function copyStreamUrl() {
+  if (!_currentStreamUrl) return;
+  navigator.clipboard.writeText(_currentStreamUrl).then(() => {
+    const btn = document.getElementById('btn-copy-url');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+async function playOnClient() {
+  const sel = document.getElementById('client-select');
+  const clientId = sel.value;
+  if (!clientId || !_currentRatingKey) return;
+  const r = await fetch('/api/play_on_client', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      client_identifier: clientId,
+      rating_key: _currentRatingKey,
+      media_type: _currentMediaType || 'movie',
+    }),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    closeModal();
+  } else {
+    document.getElementById('play-error').textContent = d.error || 'Playback command failed.';
+    document.getElementById('play-error').style.display = 'block';
+  }
+}
+
+function closeModal() {
+  document.getElementById('prog-modal').classList.remove('open');
+}
+document.getElementById('prog-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('prog-modal')) closeModal();
+});
+
+// ── Channels tab ───────────────────────────────────────────────────────────────
+async function loadChannelList() {
+  const r = await fetch('/api/channels');
+  const d = await r.json();
+  const list = document.getElementById('ch-list');
+  if (!d.channels || d.channels.length === 0) {
+    list.innerHTML = '<div class="text-sec text-sm" style="padding:20px;text-align:center">No channels.</div>';
+    return;
+  }
+  list.innerHTML = d.channels.map(ch => {
+    // Logo area — click to upload a new logo
+    const logoInner = ch.logo_url
+      ? `<img src="${ch.logo_url}?t=${Date.now()}" alt="" onerror="this.style.display='none'">`
+      : `<span>📷</span>`;
+    const logoArea = `<div class="ch-logo" title="Click to upload logo" onclick="triggerLogoUpload(${ch.number})">${logoInner}</div>
+      <input type="file" id="logo-file-${ch.number}" accept="image/*" style="display:none" onchange="uploadLogo(${ch.number},this)">`;
+
+    // Right-side action buttons
+    const editBtn = `<button class="btn btn-secondary btn-sm" onclick="editChannel(${ch.number})">Edit</button>`;
+    const visBtn = ch.is_hidden
+      ? `<button class="btn btn-secondary btn-sm" onclick="showChannel(${ch.number})">Show</button>`
+      : `<button class="btn btn-secondary btn-sm" onclick="hideChannel(${ch.number})">Hide</button>`;
+    let extraBtn = '';
+    if (ch.is_custom) {
+      extraBtn = `<button class="btn btn-danger btn-sm" onclick="deleteChannel(${ch.number})">Delete</button>`;
+    } else if (ch.is_overridden) {
+      extraBtn = `<button class="btn btn-secondary btn-sm" onclick="restoreChannel(${ch.number})" title="Reset to default settings">Restore</button>`;
+    }
+
+    return `<div class="ch-item ${ch.is_hidden ? 'hidden-ch' : ''}">
+      ${logoArea}
+      <span class="ch-num">${ch.number}</span>
+      <span class="ch-name">${escHtml(ch.name)}</span>
+      ${typeBadge(ch.type)}
+      ${ch.is_custom ? '<span class="badge badge-custom">custom</span>' : ''}
+      ${ch.is_overridden ? '<span class="badge badge-edited">edited</span>' : ''}
+      ${ch.is_hidden ? '<span class="badge" style="background:#ef444422;color:#fca5a5">hidden</span>' : ''}
+      <div class="ch-actions">${editBtn}${visBtn}${extraBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+function triggerLogoUpload(num) {
+  document.getElementById('logo-file-' + num).click();
+}
+
+async function uploadLogo(num, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('logo', file);
+  const r = await fetch(`/api/channels/${num}/logo`, {method: 'POST', body: form});
+  const d = await r.json();
+  if (d.ok) {
+    loadChannelList();
+  } else {
+    alert(d.error || 'Upload failed');
+  }
+  input.value = '';  // reset so same file can be re-selected
+}
+
+async function hideChannel(n) {
+  await fetch(`/api/channels/${n}/hide`, {method:'POST'});
+  loadChannelList();
+}
+async function showChannel(n) {
+  await fetch(`/api/channels/${n}/show`, {method:'POST'});
+  loadChannelList();
+}
+async function deleteChannel(n) {
+  if (!confirm(`Delete channel ${n}? This cannot be undone.`)) return;
+  await fetch(`/api/channels/${n}`, {method:'DELETE'});
+  loadChannelList();
+}
+async function restoreChannel(n) {
+  if (!confirm(`Restore channel ${n} to its default settings? Your edits will be lost.`)) return;
+  await fetch(`/api/channels/${n}/restore`, {method:'POST'});
+  loadChannelList();
+}
+
+// ── Edit channel modal ─────────────────────────────────────────────────────────
+const _editTags = {genres: [], studios: [], keywords: []};
+
+function closeEditModal() {
+  document.getElementById('ch-edit-modal').classList.remove('open');
+}
+document.getElementById('ch-edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('ch-edit-modal')) closeEditModal();
+});
+
+async function editChannel(num) {
+  const r = await fetch('/api/channels');
+  const d = await r.json();
+  const ch = (d.channels || []).find(c => c.number === num);
+  if (!ch) return;
+
+  document.getElementById('ch-edit-number').value = num;
+  document.getElementById('ch-edit-title').textContent = `Edit: ${ch.name}`;
+  document.getElementById('ch-edit-name').value = ch.name || '';
+  document.getElementById('ch-edit-type').value = ch.type || 'mixed';
+  document.getElementById('ch-edit-max-year').value = ch.max_year || '';
+  document.getElementById('ch-edit-sorting').value = ch.sorting_method || 'RANDOM';
+
+  _editTags.genres   = (ch.genres   || []).slice();
+  _editTags.studios  = (ch.studios  || []).slice();
+  _editTags.keywords = (ch.keywords || []).slice();
+  renderEditTags('genres');
+  renderEditTags('studios');
+  renderEditTags('keywords');
+
+  alert$(document.getElementById('ch-edit-alert'), '', '');
+  document.getElementById('ch-edit-modal').classList.add('open');
+}
+
+function addEditTag(e, field) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const inp = document.getElementById('ch-edit-' + field + '-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  _editTags[field].push(val);
+  renderEditTags(field);
+  inp.value = '';
+}
+
+function removeEditTag(field, idx) {
+  _editTags[field].splice(idx, 1);
+  renderEditTags(field);
+}
+
+function renderEditTags(field) {
+  const container = document.getElementById('ch-edit-' + field + '-container');
+  const inp = document.getElementById('ch-edit-' + field + '-input');
+  container.innerHTML = '';
+  _editTags[field].forEach((t, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = `${escHtml(t)}<span class="remove" onclick="removeEditTag('${field}',${i})">✕</span>`;
+    container.appendChild(tag);
+  });
+  container.appendChild(inp);
+}
+
+async function saveChannelEdit() {
+  const num = parseInt(document.getElementById('ch-edit-number').value);
+  const name = document.getElementById('ch-edit-name').value.trim();
+  if (!name) {
+    alert$(document.getElementById('ch-edit-alert'), 'Channel name is required.', 'error');
+    return;
+  }
+  const payload = {
+    name,
+    type: document.getElementById('ch-edit-type').value,
+    genres:   _editTags.genres.slice(),
+    studios:  _editTags.studios.slice(),
+    keywords: _editTags.keywords.slice(),
+    max_year: document.getElementById('ch-edit-max-year').value
+      ? parseInt(document.getElementById('ch-edit-max-year').value)
+      : null,
+    sorting_method: document.getElementById('ch-edit-sorting').value,
+  };
+  const r = await fetch(`/api/channels/${num}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    closeEditModal();
+    loadChannelList();
+  } else {
+    alert$(document.getElementById('ch-edit-alert'), d.error || 'Save failed.', 'error');
+  }
+}
+
+// ── Channel builder ────────────────────────────────────────────────────────────
+const tagData = {genres: [], studios: [], keywords: []};
+
+function focusTagInput(id) { document.getElementById(id).focus(); }
+
+function addTag(e, field) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const inp = document.getElementById(field + '-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  tagData[field].push(val);
+  renderTags(field);
+  document.getElementById(field).value = JSON.stringify(tagData[field]);
+  inp.value = '';
+}
+function removeTag(field, idx) {
+  tagData[field].splice(idx, 1);
+  renderTags(field);
+  document.getElementById(field).value = JSON.stringify(tagData[field]);
+}
+function renderTags(field) {
+  const container = document.getElementById('b-' + field + '-container');
+  const inp = document.getElementById('b-' + field + '-input');
+  container.innerHTML = '';
+  tagData[field].forEach((t, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = `${t}<span class="remove" onclick="removeTag('${field}',${i})">✕</span>`;
+    container.appendChild(tag);
+  });
+  container.appendChild(inp);
+}
+
+async function previewChannel() {
+  const number = parseInt(document.getElementById('b-number').value);
+  if (!number) { alert$( document.getElementById('builder-alert'), 'Enter a channel number first.', 'error'); return; }
+  // Try preview on a temporary basis by POSTing then fetching count
+  const body = buildChannelPayload();
+  if (!body) return;
+  // Use the /api/channels/custom endpoint but if it fails on number conflict, note it
+  // Instead do a dry-run via a different approach: just show genre/studio info
+  const r = await fetch('/api/channels/custom', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...body, _preview: true})
+  });
+  const d = await r.json();
+  if (d.ok !== undefined) {
+    document.getElementById('preview-result').textContent =
+      `Matching content: ${d.matching_count} items`;
+    // Delete the just-created channel if it was an actual insert (no-op for preview)
+  } else if (d.matching_count !== undefined) {
+    document.getElementById('preview-result').textContent =
+      `Matching content: ${d.matching_count} items`;
+  } else {
+    document.getElementById('preview-result').textContent = d.error || 'Error';
+  }
+}
+
+function buildChannelPayload() {
+  const number = parseInt(document.getElementById('b-number').value);
+  const name = document.getElementById('b-name').value.trim();
+  if (!number || !name) {
+    alert$(document.getElementById('builder-alert'), 'Channel number and name are required.', 'error');
+    return null;
+  }
+  return {
+    number,
+    name,
+    type: document.getElementById('b-type').value,
+    genres: tagData.genres,
+    studios: tagData.studios,
+    keywords: tagData.keywords,
+    max_year: document.getElementById('b-max-year').value ? parseInt(document.getElementById('b-max-year').value) : null,
+    sorting_method: document.getElementById('b-sorting').value,
+  };
+}
+
+async function createChannel() {
+  const body = buildChannelPayload();
+  if (!body) return;
+  const r = await fetch('/api/channels/custom', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.ok) {
+    alert$(document.getElementById('builder-alert'),
+      `Channel ${body.number} created! (${d.matching_count} matching items) — go to Settings → Build Schedule.`,
+      'success');
+  } else {
+    alert$(document.getElementById('builder-alert'), d.error || 'Error', 'error');
+  }
+}
+
+// ── Settings ───────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  const r = await fetch('/api/status');
+  const d = await r.json();
+  if (d.plex_url) document.getElementById('s-plex-url').value = d.plex_url;
+  loadLibraries();
+}
+
+async function saveConnection() {
+  let url = document.getElementById('s-plex-url').value.trim().replace(/\/$/, '');
+  const token = document.getElementById('s-plex-token').value.trim();
+  if (!url || !token) {
+    alert$(document.getElementById('conn-alert'), 'Both URL and token are required.', 'error');
+    return;
+  }
+  // Auto-add protocol if missing
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
+  document.getElementById('s-plex-url').value = url;
+  alert$(document.getElementById('conn-alert'), 'Connecting...', 'info');
+  const r = await fetch('/api/connect', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({plex_url: url, plex_token: token})
+  });
+  const d = await r.json();
+  alert$(document.getElementById('conn-alert'), d.ok ? 'Connected successfully!' : (d.error || 'Failed'), d.ok ? 'success' : 'error');
+  if (d.ok) loadLibraries();
+}
+
+async function loadLibraries() {
+  const div = document.getElementById('lib-list');
+  div.innerHTML = '<div class="text-sec text-sm">Loading...</div>';
+  try {
+    const r = await fetch('/api/libraries');
+    const d = await r.json();
+    if (!r.ok || d.error) {
+      div.innerHTML = `<div class="alert alert-error">${d.error || 'Failed to load libraries'}</div>`;
+      return;
+    }
+    const libs = d.libraries || [];
+    div.innerHTML = libs.map(l => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer">
+        <input type="checkbox" class="lib-check" value="${l.key}"
+          style="width:auto" onchange="toggleLib('${l.key}',this.checked)"
+          ${selectedLibraries.has(l.key) ? 'checked' : ''}>
+        <span>${l.title}</span>
+        <span class="badge badge-${l.type}">${l.type}</span>
+      </label>
+    `).join('');
+    if (libs.length === 0) div.innerHTML = '<div class="text-sec text-sm">No libraries found.</div>';
+  } catch(e) {
+    div.innerHTML = '<div class="alert alert-error">Could not reach server.</div>';
+  }
+}
+function toggleLib(id, checked) {
+  if (checked) selectedLibraries.add(id);
+  else selectedLibraries.delete(id);
+}
+
+async function startSync() {
+  const libs = [...selectedLibraries];
+  if (libs.length === 0) {
+    alert$(document.getElementById('lib-alert'), 'Select at least one library.', 'error');
+    return;
+  }
+  alert$(document.getElementById('lib-alert'), '', '');
+  document.getElementById('sync-status-bar').classList.remove('hidden');
+  document.getElementById('sync-msg').textContent = 'Starting sync...';
+  document.getElementById('sync-fill').style.width = '0%';
+  const r = await fetch('/api/sync', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({library_ids: libs})
+  });
+  const d = await r.json();
+  if (!d.ok) {
+    alert$(document.getElementById('lib-alert'), d.error || 'Sync failed', 'error');
+  }
+}
+
+async function buildSchedule() {
+  const days = parseInt(document.getElementById('s-days')?.value || 3);
+  const align = document.getElementById('s-align')?.checked !== false;
+  document.getElementById('schedule-status-bar').classList.remove('hidden');
+  document.getElementById('schedule-msg').textContent = 'Starting...';
+  document.getElementById('schedule-fill').style.width = '0%';
+  document.getElementById('btn-build').disabled = true;
+  await fetch('/api/schedule/build', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({days, align})
+  });
+}
+
+async function clearSchedule() {
+  if (!confirm('Delete all scheduled programs?')) return;
+  // Use the build endpoint with no content forces a rebuild; for a clear we just rebuild
+  await fetch('/api/schedule/build', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({days: 0})
+  });
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+loadGuide();
+</script>
+</body>
+</html>
