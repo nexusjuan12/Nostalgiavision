@@ -104,6 +104,7 @@ def init_db():
             thumb_url       TEXT,
             art_url         TEXT,
             clear_logo_url  TEXT,
+            duration_ms     INTEGER,           -- actual Plex duration (pre-alignment)
             start_time      INTEGER NOT NULL,  -- ms since epoch
             end_time        INTEGER NOT NULL,
             is_new          INTEGER DEFAULT 0,
@@ -113,6 +114,12 @@ def init_db():
 
         CREATE INDEX IF NOT EXISTS idx_programs_channel_time
             ON programs (channel_id, start_time, end_time);
+        """)
+        # Migration: add duration_ms if it doesn't exist yet (for existing DBs)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(programs)").fetchall()]
+        if "duration_ms" not in cols:
+            conn.execute("ALTER TABLE programs ADD COLUMN duration_ms INTEGER")
+        conn.executescript("""
 
         CREATE TABLE IF NOT EXISTS custom_channels (
             number     INTEGER PRIMARY KEY,
@@ -285,13 +292,15 @@ def insert_programs(rows: list):
              summary, season_number, episode_number, episode_title,
              content_rating, video_resolution, audio_codec, video_codec,
              has_subtitles, thumb_url, art_url, clear_logo_url,
-             start_time, end_time, is_new, commercial_media_key, commercial_duration)
+             duration_ms, start_time, end_time, is_new,
+             commercial_media_key, commercial_duration)
             VALUES
             (:channel_id,:rating_key,:media_part_key,:type,:title,:show_title,
              :summary,:season_number,:episode_number,:episode_title,
              :content_rating,:video_resolution,:audio_codec,:video_codec,
              :has_subtitles,:thumb_url,:art_url,:clear_logo_url,
-             :start_time,:end_time,:is_new,:commercial_media_key,:commercial_duration)
+             :duration_ms,:start_time,:end_time,:is_new,
+             :commercial_media_key,:commercial_duration)
         """, rows)
 
 

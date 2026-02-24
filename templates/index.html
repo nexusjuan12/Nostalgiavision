@@ -11,165 +11,447 @@
   --text-sec:#9E9EA8;--accent:#6366F1;--accent-hover:#818cf8;
   --border:#2A2A35;--divider:#1F1F28;--success:#22c55e;--error:#ef4444;
   --warning:#f59e0b;--radius:8px;
+  --ch-col:120px;--time-row:28px;--ch-row:54px;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  font-size:14px;line-height:1.5}
+  font-size:14px;line-height:1.5;overflow:hidden}
 
-/* Layout */
-.app{max-width:1200px;margin:0 auto;padding:16px}
+/* ── App shell ─── */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── Header ─── */
 header{display:flex;align-items:center;justify-content:space-between;
-  padding:16px 0;border-bottom:1px solid var(--divider);margin-bottom:20px}
-header h1{font-size:22px;font-weight:700;letter-spacing:-.5px}
+  padding:0 16px;height:40px;flex-shrink:0;
+  border-bottom:1px solid var(--divider);background:var(--bg)}
+header h1{font-size:18px;font-weight:700;letter-spacing:-.5px}
 header h1 span{color:var(--accent)}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--error);display:inline-block;margin-right:6px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--error);
+  display:inline-block;margin-right:6px}
 .status-dot.ok{background:var(--success)}
 .status-text{font-size:12px;color:var(--text-sec);display:flex;align-items:center;gap:6px}
 
-/* Tabs */
-.tabs{display:flex;gap:0;border-bottom:2px solid var(--divider);margin-bottom:24px}
-.tab{padding:10px 22px;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;
-  margin-bottom:-2px;font-weight:500;transition:all .2s;user-select:none}
+/* ── Tabs ─── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--divider);flex-shrink:0;
+  background:var(--bg);padding:0 8px}
+.tab{padding:8px 18px;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;
+  margin-bottom:-1px;font-weight:500;font-size:13px;transition:all .2s;user-select:none}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-content{display:none}
-.tab-content.active{display:block}
 
-/* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:18px;margin-bottom:14px}
+/* ── Tab content ─── */
+.tab-content{display:none;flex:1;overflow:hidden}
+.tab-content.active{display:flex;flex-direction:column}
+
+/* ── Non-guide tabs: scrollable card layout ─── */
+.tab-inner{max-width:1200px;margin:0 auto;padding:16px;width:100%;
+  overflow-y:auto;flex:1}
+
+/* ── Cards ─── */
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;margin-bottom:14px}
 .card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
 .card-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 
-/* Forms */
+/* ── Forms ─── */
 .form-group{margin-bottom:14px}
-.form-group label{display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px;font-weight:500}
+.form-group label{display:block;font-size:12px;color:var(--text-sec);
+  margin-bottom:4px;font-weight:500}
 input[type=text],input[type=number],input[type=password],select,textarea{
   width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:8px 12px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
+  padding:8px 12px;color:var(--text);font-size:13px;outline:none;
+  transition:border-color .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 select{cursor:pointer}
 select option{background:var(--surface);color:var(--text)}
 textarea{resize:vertical;min-height:80px;font-family:inherit}
 
-/* Buttons */
-.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;
-  font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+/* ── Buttons ─── */
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;
+  font-size:13px;font-weight:500;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:var(--accent-hover)}
 .btn-secondary{background:var(--surface-el);color:var(--text);border:1px solid var(--border)}
 .btn-secondary:hover{border-color:var(--accent)}
 .btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid var(--error)}
 .btn-danger:hover{background:var(--error);color:#fff}
-.btn-sm{padding:4px 10px;font-size:12px}
+.btn-sm{padding:5px 11px;font-size:12px}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* Badges */
-.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
+/* ── Badges ─── */
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;
+  text-transform:uppercase}
 .badge-movie{background:#7c3aed22;color:#a78bfa}
 .badge-series{background:#06b6d422;color:#67e8f9}
 .badge-mixed{background:#f59e0b22;color:#fbbf24}
 .badge-music{background:#22c55e22;color:#4ade80}
 .badge-weather{background:#0ea5e922;color:#38bdf8}
 .badge-custom{background:#ec489922;color:#f472b6}
+.badge-edited{background:#f59e0b22;color:#fbbf24}
 
-/* Progress */
-.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
+/* ── Progress ─── */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;
+  overflow:hidden;margin-top:8px}
 .progress-bar .fill{height:100%;background:var(--accent);transition:width .3s}
 .status-msg{font-size:12px;color:var(--text-sec);margin-top:6px}
 
-/* Alert */
+/* ── Alert ─── */
 .alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
 .alert-success{background:#14532d44;border:1px solid var(--success);color:#4ade80}
 .alert-error{background:#7f1d1d44;border:1px solid var(--error);color:#fca5a5}
 .alert-info{background:#1e3a5f44;border:1px solid #3b82f6;color:#93c5fd}
 
-/* EPG Guide */
-.guide-controls{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-.guide-time{font-size:12px;color:var(--text-sec)}
-.guide-container{overflow-x:auto}
-.guide-table{width:100%;border-collapse:collapse;min-width:700px}
-.guide-table th{background:var(--surface-el);padding:6px 10px;text-align:left;
-  font-size:11px;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--divider);
-  position:sticky;top:0;z-index:1}
-.guide-row{border-bottom:1px solid var(--divider)}
-.guide-row:hover{background:var(--surface-el)}
-.guide-ch-num{width:60px;padding:10px 10px;font-size:12px;color:var(--accent);font-weight:700}
-.guide-ch-name{width:130px;padding:10px 6px;font-size:12px;font-weight:500}
-.guide-programs{padding:4px 6px;position:relative}
-.prog-strip{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden}
-.prog-item{background:var(--surface-el);border:1px solid var(--border);border-radius:4px;
-  display:flex;gap:8px;align-items:flex-start;
-  padding:6px 8px;flex-shrink:0;cursor:pointer;transition:border-color .15s;min-width:140px;max-width:300px}
-.prog-item:hover{border-color:var(--accent)}
-.prog-item.now-playing{border-color:var(--accent);background:#6366f115}
-.prog-thumb{width:38px;height:56px;border-radius:3px;object-fit:cover;flex-shrink:0;
-  background:var(--border);display:block}
-.prog-thumb[data-src]{opacity:0;transition:opacity .2s}
-.prog-thumb.loaded{opacity:1}
-.prog-text{min-width:0;flex:1}
-.prog-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prog-sub{font-size:11px;color:var(--text-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prog-time{font-size:10px;color:var(--text-sec);margin-top:2px}
-.no-prog{font-size:12px;color:var(--text-sec);padding:8px 6px;font-style:italic}
-
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:#00000080;z-index:100;
-  display:flex;align-items:center;justify-content:center;display:none}
-.modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:24px;max-width:480px;width:90%;max-height:85vh;overflow-y:auto}
-.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
-.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-
-/* Channel list (Channels tab) */
+/* ── Channel list ─── */
 .ch-list{display:flex;flex-direction:column;gap:8px}
-.ch-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:10px 14px;display:flex;align-items:center;gap:10px}
+.ch-item{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 14px;
+  display:flex;align-items:center;gap:10px}
 .ch-item.hidden-ch{opacity:.45}
 .ch-num{font-size:13px;font-weight:700;color:var(--accent);min-width:40px}
-.ch-name{flex:1;font-size:13px;font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-name{flex:1;font-size:13px;font-weight:500;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch-actions{display:flex;gap:6px;flex-shrink:0}
-.ch-logo{width:40px;height:40px;border-radius:4px;flex-shrink:0;overflow:hidden;position:relative;
-  background:var(--surface-el);border:1px solid var(--border);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-sec)}
+.ch-logo{width:40px;height:40px;border-radius:4px;flex-shrink:0;overflow:hidden;
+  position:relative;background:var(--surface-el);border:1px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text-sec)}
 .ch-logo:hover{border-color:var(--accent)}
 .ch-logo img{width:100%;height:100%;object-fit:cover;display:block}
-.badge-edited{background:#f59e0b22;color:#fbbf24}
 
-/* Settings */
+/* ── Settings ─── */
 .settings-section{margin-bottom:24px}
 .settings-section h3{font-size:14px;font-weight:600;margin-bottom:12px;
   padding-bottom:8px;border-bottom:1px solid var(--divider)}
 
-/* Tag input */
-.tag-input{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);border:1px solid var(--border);
-  border-radius:6px;padding:6px 10px;cursor:text;min-height:40px}
+/* ── Tag input ─── */
+.tag-input{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);
+  border:1px solid var(--border);border-radius:6px;padding:6px 10px;
+  cursor:text;min-height:40px}
 .tag-input:focus-within{border-color:var(--accent)}
-.tag{background:var(--accent);color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;
-  display:flex;align-items:center;gap:4px}
+.tag{background:var(--accent);color:#fff;border-radius:4px;padding:2px 8px;
+  font-size:12px;display:flex;align-items:center;gap:4px}
 .tag .remove{cursor:pointer;opacity:.8;font-size:10px}
 .tag .remove:hover{opacity:1}
-.tag-input input{border:none;background:transparent;color:var(--text);font-size:13px;
-  outline:none;min-width:80px;flex:1}
+.tag-input input{border:none;background:transparent;color:var(--text);
+  font-size:13px;outline:none;min-width:80px;flex:1}
 
-/* Info grid */
+/* ── Info grid ─── */
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .info-stat{background:var(--surface-el);border-radius:6px;padding:12px 16px}
 .info-stat .val{font-size:24px;font-weight:700;color:var(--accent)}
 .info-stat .lbl{font-size:11px;color:var(--text-sec);margin-top:2px}
 
-/* Utilities */
-.mt-8{margin-top:8px}
-.mt-16{margin-top:16px}
-.mt-16{margin-top:16px}
-.text-sec{color:var(--text-sec)}
-.text-sm{font-size:12px}
-.flex{display:flex}
-.gap-8{gap:8px}
-.items-center{align-items:center}
+/* ── Utilities ─── */
+.mt-8{margin-top:8px}.mt-16{margin-top:16px}
+.text-sec{color:var(--text-sec)}.text-sm{font-size:12px}
+.flex{display:flex}.gap-8{gap:8px}.items-center{align-items:center}
 .hidden{display:none!important}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUIDE TAB — full-screen immersive layout
+   ══════════════════════════════════════════════════════════════════════ */
+#tab-guide.active{display:flex;flex-direction:column;flex:1;overflow:hidden}
+
+/* Top split panel — 50% height */
+#guide-top-panel{
+  display:flex;flex:0 0 50%;min-height:0;
+  border-bottom:2px solid var(--accent);
+}
+
+/* Info panel — left 66% */
+#guide-info-panel{
+  flex:0 0 66%;display:flex;flex-direction:column;
+  background:#111118;border-right:1px solid var(--border);
+  overflow:hidden;padding:12px 14px 8px;gap:8px;min-width:0;
+}
+#guide-info-header{
+  display:flex;align-items:flex-start;gap:10px;flex-shrink:0;
+}
+#guide-info-titles{flex:1;min-width:0}
+#guide-show-title{
+  font-size:22px;font-weight:800;letter-spacing:-.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:#fff;line-height:1.2;
+}
+#guide-ep-info{font-size:13px;color:var(--accent);margin-top:2px;
+  font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#guide-time-ch{font-size:12px;color:var(--text-sec);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#guide-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.badge-cr{background:#f59e0b22;color:#fbbf24;font-size:10px;
+  padding:2px 7px;border-radius:4px;font-weight:700;border:1px solid #f59e0b44}
+.badge-res{background:#06b6d422;color:#67e8f9;font-size:10px;
+  padding:2px 7px;border-radius:4px;font-weight:700;border:1px solid #06b6d444}
+.badge-live{background:#ef444422;color:#f87171;font-size:10px;
+  padding:2px 7px;border-radius:4px;font-weight:800;border:1px solid var(--error);
+  animation:pulse-live 1.5s ease-in-out infinite}
+@keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Channel logo box (top-right of info panel) */
+#guide-ch-logo-box{
+  width:64px;height:64px;flex-shrink:0;border-radius:6px;
+  background:var(--surface-el);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+#guide-ch-logo-box img{width:100%;height:100%;object-fit:contain}
+#guide-ch-logo-box .ch-num-fb{
+  font-size:16px;font-weight:800;color:var(--accent);text-align:center}
+
+/* Info body: thumb + summary */
+#guide-info-body{
+  display:flex;gap:10px;flex:1;min-height:0;overflow:hidden;
+}
+#guide-prog-thumb{
+  width:80px;height:118px;flex-shrink:0;border-radius:5px;
+  object-fit:cover;background:var(--surface-el);border:1px solid var(--border);
+}
+#guide-summary{
+  font-size:12px;color:var(--text-sec);line-height:1.6;
+  overflow:hidden;flex:1;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;
+}
+
+/* Info footer: play buttons + guide controls */
+#guide-info-footer{
+  flex-shrink:0;display:flex;flex-direction:column;gap:6px;
+}
+#guide-play-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#guide-client-wrap{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+#guide-client-select{flex:1;min-width:100px;padding:5px 8px;font-size:12px;
+  background:var(--surface-el);border:1px solid var(--border);
+  border-radius:5px;color:var(--text)}
+#guide-controls-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#guide-sched-bar{padding-top:4px}
+
+/* Video panel — right 34% */
+#guide-video-panel{
+  flex:1;display:flex;flex-direction:column;background:#000;
+  position:relative;min-width:0;
+}
+#guide-video-wrap{
+  flex:1;position:relative;overflow:hidden;
+}
+#guide-video{
+  width:100%;height:100%;object-fit:contain;background:#000;display:none;
+}
+#guide-video-placeholder{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;
+  color:var(--text-sec);font-size:13px;
+}
+#guide-video-placeholder .icon{font-size:32px;opacity:.5}
+#guide-video-spinner{
+  position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;background:#000a;
+}
+#guide-video-spinner .ring{
+  width:32px;height:32px;border:3px solid #ffffff22;
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Video controls (always visible bar at bottom of video panel) */
+#guide-video-controls{
+  display:flex;align-items:center;gap:6px;padding:6px 10px;
+  background:#111;border-top:1px solid #222;flex-shrink:0;flex-wrap:wrap;
+}
+.vctr{background:none;border:1px solid #333;border-radius:4px;
+  color:#ddd;cursor:pointer;padding:3px 9px;font-size:12px;
+  transition:all .15s;white-space:nowrap}
+.vctr:hover{border-color:var(--accent);color:#fff}
+.vctr.active{background:var(--accent);border-color:var(--accent);color:#fff}
+#guide-vol-slider{
+  width:60px;height:3px;-webkit-appearance:none;appearance:none;
+  background:#333;border-radius:2px;outline:none;cursor:pointer;
+}
+#guide-vol-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:10px;height:10px;border-radius:50%;
+  background:#fff;cursor:pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUIDE STRIP — lower 50%, proportional time grid
+   ══════════════════════════════════════════════════════════════════════ */
+#guide-strip{
+  flex:1;min-height:0;display:flex;flex-direction:column;
+  background:var(--bg);overflow:hidden;
+}
+
+/* Single 2D scroll container */
+#guide-scroll-wrap{
+  flex:1;overflow:auto;position:relative;
+  /* custom scrollbar */
+  scrollbar-color:var(--border) transparent;
+  scrollbar-width:thin;
+}
+#guide-scroll-wrap::-webkit-scrollbar{width:6px;height:6px}
+#guide-scroll-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+#guide-scroll-wrap::-webkit-scrollbar-track{background:transparent}
+
+/* Time header row — sticky to top */
+#guide-time-row{
+  display:flex;align-items:stretch;
+  height:var(--time-row);
+  position:sticky;top:0;z-index:20;
+  background:var(--surface-el);
+  border-bottom:1px solid var(--border);
+  min-width:max-content;
+}
+#guide-corner{
+  width:var(--ch-col);min-width:var(--ch-col);
+  position:sticky;left:0;z-index:21;
+  background:#1e1e28;
+  border-right:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+#guide-now-btn{
+  font-size:10px;font-weight:800;color:var(--accent);
+  cursor:pointer;padding:3px 8px;border:1px solid var(--accent);
+  border-radius:3px;letter-spacing:.5px;
+}
+#guide-now-btn:hover{background:var(--accent);color:#fff}
+
+/* Time labels container */
+#guide-time-labels{
+  position:relative;height:var(--time-row);flex-shrink:0;
+}
+.guide-time-tick{
+  position:absolute;top:0;bottom:0;
+  display:flex;align-items:center;
+  padding-left:4px;
+  font-size:11px;color:var(--text-sec);font-weight:600;
+  white-space:nowrap;
+}
+.guide-time-tick::after{
+  content:'';position:absolute;bottom:0;left:0;top:0;
+  width:1px;background:var(--divider);
+}
+
+/* Subtle "now" tick in time header — just a thin accent mark at left edge */
+.guide-now-tick{
+  position:absolute;top:0;bottom:0;width:1px;
+  background:rgba(99,102,241,0.35);z-index:5;pointer-events:none;
+}
+
+/* Channel rows container */
+#guide-grid-rows{min-width:max-content}
+
+/* Individual channel row */
+.guide-ch-row{
+  display:flex;align-items:stretch;
+  height:var(--ch-row);
+  border-bottom:1px solid var(--divider);
+  position:relative;
+}
+.guide-ch-row:hover>.guide-ch-label{background:#1e1e2e}
+.guide-ch-row.row-selected>.guide-ch-label{background:#1e1e35}
+
+/* Sticky channel label */
+.guide-ch-label{
+  width:var(--ch-col);min-width:var(--ch-col);
+  position:sticky;left:0;z-index:10;
+  background:var(--bg);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 8px;cursor:default;flex-shrink:0;transition:background .15s;
+}
+.guide-label-num{
+  font-size:13px;font-weight:800;color:var(--accent);line-height:1.2;
+}
+.guide-label-name{
+  font-size:10px;color:var(--text-sec);
+  overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  line-height:1.3;
+}
+
+/* Program blocks container */
+.guide-ch-progs{
+  position:relative;height:var(--ch-row);flex-shrink:0;
+}
+
+/* Aired overlay — dark tint over the already-elapsed portion of a live block */
+.prog-aired-overlay{
+  position:absolute;left:0;top:0;bottom:0;
+  background:rgba(0,0,0,0.42);pointer-events:none;z-index:2;
+  border-radius:4px 0 0 4px;
+}
+
+/* Individual program block */
+.guide-prog-block{
+  position:absolute;top:3px;
+  height:calc(var(--ch-row) - 6px);
+  border-radius:4px;overflow:hidden;cursor:pointer;
+  box-sizing:border-box;border:1px solid transparent;
+  padding:4px 7px;display:flex;flex-direction:column;
+  justify-content:flex-start;transition:filter .15s,border-color .15s;
+}
+.guide-prog-block:hover{filter:brightness(1.3)}
+.guide-prog-block.now-live{border-color:rgba(99,102,241,.6)!important}
+.guide-prog-block.selected{
+  border-color:#fff!important;filter:brightness(1.4);
+  outline:1px solid rgba(255,255,255,.3);
+}
+.prog-block-title{
+  font-size:11px;font-weight:700;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.prog-block-ep{
+  font-size:10px;color:rgba(255,255,255,.7);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.prog-live-badge{
+  font-size:9px;font-weight:800;color:#f87171;
+  text-transform:uppercase;letter-spacing:.5px;margin-top:2px;
+}
+
+/* Logo slate (padded gap after content ends) */
+.guide-prog-slate{
+  position:absolute;top:3px;
+  height:calc(var(--ch-row) - 6px);
+  border-radius:4px;overflow:hidden;cursor:pointer;
+  background:#0a0a12;border:1px solid #1a1a24;
+  display:flex;align-items:center;justify-content:center;
+}
+.guide-prog-slate img{
+  max-width:80%;max-height:80%;object-fit:contain;opacity:.4;
+}
+.guide-prog-slate .slate-dash{
+  font-size:16px;color:#2a2a35;
+}
+
+/* 8-colour channel palette */
+.ch-c0{background:#12263d}
+.ch-c1{background:#1f1240}
+.ch-c2{background:#0e2e1c}
+.ch-c3{background:#2e1e0e}
+.ch-c4{background:#0e1e2e}
+.ch-c5{background:#2e0e1e}
+.ch-c6{background:#1e2e0e}
+.ch-c7{background:#0e2e2e}
+.ch-b0{border-color:#1e4a70!important}
+.ch-b1{border-color:#3a2070!important}
+.ch-b2{border-color:#1a5032!important}
+.ch-b3{border-color:#5a3a1a!important}
+.ch-b4{border-color:#1a3a5a!important}
+.ch-b5{border-color:#5a1a3a!important}
+.ch-b6{border-color:#3a5a1a!important}
+.ch-b7{border-color:#1a5a5a!important}
+
+/* ── Modal (edit channel only) ─── */
+.modal-overlay{position:fixed;inset:0;background:#00000080;z-index:100;
+  display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;
+  max-width:480px;width:90%;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 </style>
 </head>
 <body>
@@ -189,232 +471,273 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
     <div class="tab" onclick="switchTab('settings')">Settings</div>
   </div>
 
-  <!-- ── GUIDE TAB ── -->
+  <!-- ══ GUIDE TAB ══ -->
   <div class="tab-content active" id="tab-guide">
-    <div class="guide-controls">
-      <button class="btn btn-secondary btn-sm" onclick="shiftTime(-2)">◀ -2h</button>
-      <button class="btn btn-secondary btn-sm" onclick="shiftTime(2)">+2h ▶</button>
-      <button class="btn btn-secondary btn-sm" onclick="goToNow()">Now</button>
-      <span class="guide-time" id="guide-time-label"></span>
-      <button class="btn btn-primary btn-sm" onclick="buildSchedule()" id="btn-build">
-        Build Schedule
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="loadGuide()">Refresh</button>
-    </div>
-    <div id="schedule-status-bar" class="hidden">
-      <div class="status-msg" id="schedule-msg"></div>
-      <div class="progress-bar"><div class="fill" id="schedule-fill" style="width:0%"></div></div>
-    </div>
-    <div class="guide-container">
-      <table class="guide-table" id="guide-table">
-        <thead>
-          <tr>
-            <th>Ch</th>
-            <th>Name</th>
-            <th>Now Playing → Upcoming</th>
-          </tr>
-        </thead>
-        <tbody id="guide-body">
-          <tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-sec)">
-            Loading guide...
-          </td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- ── CHANNELS TAB ── -->
+    <!-- Top split panel -->
+    <div id="guide-top-panel">
+
+      <!-- Info panel (left 66%) -->
+      <div id="guide-info-panel">
+        <div id="guide-info-header">
+          <div id="guide-info-titles">
+            <div id="guide-show-title">Select a program to begin</div>
+            <div id="guide-ep-info"></div>
+            <div id="guide-time-ch"></div>
+            <div id="guide-badges"></div>
+          </div>
+          <div id="guide-ch-logo-box">
+            <span class="ch-num-fb">—</span>
+          </div>
+        </div>
+
+        <div id="guide-info-body">
+          <img id="guide-prog-thumb" src="" alt="">
+          <div id="guide-summary">Load the guide and click a program to see details.</div>
+        </div>
+
+        <div id="guide-info-footer">
+          <div id="guide-play-row">
+            <button class="btn btn-primary btn-sm" id="btn-play-now"
+              onclick="playNow()" style="display:none">▶ Play Now</button>
+            <div id="guide-client-wrap" style="display:none">
+              <select id="guide-client-select">
+                <option value="">Send to player...</option>
+              </select>
+              <button class="btn btn-secondary btn-sm"
+                onclick="playOnGuideClient()">Play</button>
+            </div>
+          </div>
+          <div id="guide-controls-row">
+            <button class="btn btn-secondary btn-sm" onclick="shiftGuide(-2)">◀ −2h</button>
+            <button class="btn btn-secondary btn-sm" onclick="shiftGuide(2)">+2h ▶</button>
+            <button class="btn btn-secondary btn-sm" onclick="goToGuideNow()">Now</button>
+            <button class="btn btn-primary btn-sm" onclick="buildSchedule()"
+              id="btn-build">Build Schedule</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadGuide()">Refresh</button>
+          </div>
+          <div id="guide-sched-bar" class="hidden" style="padding-top:2px">
+            <div class="status-msg" id="schedule-msg"></div>
+            <div class="progress-bar">
+              <div class="fill" id="schedule-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /info panel -->
+
+      <!-- Video panel (right 34%) -->
+      <div id="guide-video-panel">
+        <div id="guide-video-wrap">
+          <video id="guide-video" muted playsinline></video>
+          <div id="guide-video-placeholder">
+            <div class="icon">📡</div>
+            <div>Live preview appears here</div>
+            <div style="font-size:11px;color:#666">Select a currently-airing program</div>
+          </div>
+          <div id="guide-video-spinner">
+            <div class="ring"></div>
+          </div>
+        </div>
+        <div id="guide-video-controls">
+          <button class="vctr" id="vctr-play" onclick="guideTogglePlay()" title="Play/Pause">▶</button>
+          <button class="vctr" id="vctr-mute" onclick="guideToggleMute()" title="Mute/Unmute">🔇</button>
+          <input type="range" id="guide-vol-slider" min="0" max="1" step="0.02" value="1"
+            title="Volume" oninput="guideSetVolume(this.value)">
+          <button class="vctr" id="vctr-start" onclick="guideFromStart()" title="Play from start">⏮ Start</button>
+          <button class="vctr" id="vctr-live" onclick="guideSeekLive()"
+            title="Jump to live position" style="display:none">📡 Live</button>
+          <button class="vctr" id="vctr-fs" onclick="guideFullscreen()" title="Fullscreen">⛶</button>
+        </div>
+      </div><!-- /video panel -->
+    </div><!-- /top panel -->
+
+    <!-- Guide strip (lower 50%) -->
+    <div id="guide-strip">
+      <div id="guide-scroll-wrap">
+        <!-- Time header row (sticky top) -->
+        <div id="guide-time-row">
+          <div id="guide-corner">
+            <div id="guide-now-btn" onclick="scrollToNow()" title="Scroll to now">NOW</div>
+          </div>
+          <div id="guide-time-labels"><!-- JS fills this --></div>
+        </div>
+        <!-- Channel rows (JS fills this) -->
+        <div id="guide-grid-rows">
+          <div style="padding:20px;color:var(--text-sec);font-size:13px">
+            Loading guide…
+          </div>
+        </div>
+      </div>
+    </div><!-- /guide strip -->
+
+  </div><!-- /tab-guide -->
+
+  <!-- ══ CHANNELS TAB ══ -->
   <div class="tab-content" id="tab-channels">
-    <div class="card">
-      <div class="card-row">
-        <span class="text-sec text-sm">Manage which channels appear in the guide.</span>
-        <button class="btn btn-primary btn-sm" onclick="switchTab('builder')">+ New Channel</button>
+    <div class="tab-inner">
+      <div class="card">
+        <div class="card-row">
+          <span class="text-sec text-sm">Manage which channels appear in the guide.</span>
+          <button class="btn btn-primary btn-sm" onclick="switchTab('builder')">+ New Channel</button>
+        </div>
       </div>
-    </div>
-    <div class="ch-list" id="ch-list">
-      <div class="text-sec text-sm" style="padding:20px;text-align:center">Loading...</div>
+      <div class="ch-list" id="ch-list">
+        <div class="text-sec text-sm" style="padding:20px;text-align:center">Loading...</div>
+      </div>
     </div>
   </div>
 
-  <!-- ── CHANNEL BUILDER TAB ── -->
+  <!-- ══ CHANNEL BUILDER TAB ══ -->
   <div class="tab-content" id="tab-builder">
-    <div class="card">
-      <h3>Create Custom Channel</h3>
-      <div id="builder-alert"></div>
-      <div class="form-group">
-        <label>Channel Number (must be unique, e.g. 2001)</label>
-        <input type="number" id="b-number" placeholder="2001" min="2000" max="9999">
-      </div>
-      <div class="form-group">
-        <label>Channel Name</label>
-        <input type="text" id="b-name" placeholder="My Channel">
-      </div>
-      <div class="form-group">
-        <label>Content Type</label>
-        <select id="b-type">
-          <option value="mixed">Mixed (movies + series)</option>
-          <option value="movie">Movies only</option>
-          <option value="series">Series / Episodes only</option>
-          <option value="music">Music</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Genres (press Enter after each)</label>
-        <div class="tag-input" id="b-genres-container" onclick="focusTagInput('b-genres-input')">
-          <input type="text" id="b-genres-input" placeholder="e.g. Comedy" onkeydown="addTag(event,'b-genres')">
+    <div class="tab-inner">
+      <div class="card">
+        <h3>Create Custom Channel</h3>
+        <div id="builder-alert"></div>
+        <div class="form-group">
+          <label>Channel Number (must be unique, e.g. 2001)</label>
+          <input type="number" id="b-number" placeholder="2001" min="2000" max="9999">
         </div>
-        <input type="hidden" id="b-genres" value="[]">
-      </div>
-      <div class="form-group">
-        <label>Studios / Networks (press Enter after each)</label>
-        <div class="tag-input" id="b-studios-container" onclick="focusTagInput('b-studios-input')">
-          <input type="text" id="b-studios-input" placeholder="e.g. HBO" onkeydown="addTag(event,'b-studios')">
+        <div class="form-group">
+          <label>Channel Name</label>
+          <input type="text" id="b-name" placeholder="My Channel">
         </div>
-        <input type="hidden" id="b-studios" value="[]">
-      </div>
-      <div class="form-group">
-        <label>Keywords (press Enter after each)</label>
-        <div class="tag-input" id="b-keywords-container" onclick="focusTagInput('b-keywords-input')">
-          <input type="text" id="b-keywords-input" placeholder="e.g. Christmas" onkeydown="addTag(event,'b-keywords')">
-        </div>
-        <input type="hidden" id="b-keywords" value="[]">
-      </div>
-      <div class="form-group">
-        <label>Max Year (leave blank for no limit)</label>
-        <input type="number" id="b-max-year" placeholder="e.g. 1999">
-      </div>
-      <div class="form-group">
-        <label>Sorting Method</label>
-        <select id="b-sorting">
-          <option value="RANDOM">Random (default)</option>
-          <option value="CYCLIC_SHUFFLE">Cyclic Shuffle (season-grouped)</option>
-          <option value="BLOCK_SHUFFLE">Block Shuffle (themed blocks, shuffled)</option>
-          <option value="BLOCK_CYCLIC">Block Cyclic (themed blocks, ordered)</option>
-        </select>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-secondary" onclick="previewChannel()">Preview Match Count</button>
-        <button class="btn btn-primary" onclick="createChannel()">Create Channel</button>
-      </div>
-      <div class="mt-8 text-sm text-sec" id="preview-result"></div>
-    </div>
-  </div>
-
-  <!-- ── SETTINGS TAB ── -->
-  <div class="tab-content" id="tab-settings">
-    <div class="settings-section">
-      <h3>Plex Connection</h3>
-      <div id="conn-alert"></div>
-      <div class="form-group">
-        <label>Plex Server URL</label>
-        <input type="text" id="s-plex-url" placeholder="http://192.168.1.100:32400">
-      </div>
-      <div class="form-group">
-        <label>Plex Token</label>
-        <input type="password" id="s-plex-token" placeholder="Your X-Plex-Token">
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="saveConnection()">Save &amp; Connect</button>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>Library Sync</h3>
-      <div class="text-sec text-sm" style="margin-bottom:10px">
-        Select the Plex library sections to use for channel content.
-      </div>
-      <div id="lib-alert"></div>
-      <div id="lib-list" class="text-sec text-sm">Connect to Plex to list libraries.</div>
-      <div class="btn-group mt-8">
-        <button class="btn btn-secondary" onclick="loadLibraries()">Refresh Libraries</button>
-        <button class="btn btn-primary" onclick="startSync()" id="btn-sync">Sync Selected</button>
-      </div>
-      <div id="sync-status-bar" class="hidden mt-8">
-        <div class="status-msg" id="sync-msg"></div>
-        <div class="progress-bar"><div class="fill" id="sync-fill" style="width:0%"></div></div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>Schedule Settings</h3>
-      <div class="form-group">
-        <label>Days to schedule ahead</label>
-        <input type="number" id="s-days" value="3" min="1" max="14">
-      </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" id="s-align" checked style="width:auto;margin-right:6px">
-          Align programs to quarter-hour boundaries (00/15/30/45 min)
-        </label>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="buildSchedule()">Build Schedule Now</button>
-        <button class="btn btn-danger btn-sm" onclick="clearSchedule()">Clear All Programs</button>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>Library Statistics</h3>
-      <div class="info-grid" id="lib-stats">
-        <div class="info-stat"><div class="val" id="stat-movies">—</div><div class="lbl">Movies</div></div>
-        <div class="info-stat"><div class="val" id="stat-episodes">—</div><div class="lbl">Episodes</div></div>
-        <div class="info-stat"><div class="val" id="stat-shows">—</div><div class="lbl">Shows</div></div>
-      </div>
-      <div class="text-sm text-sec mt-8" id="cache-info"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Program detail modal -->
-<div class="modal-overlay" id="prog-modal">
-  <div class="modal" style="max-width:540px">
-    <div style="display:flex;gap:14px">
-      <img id="modal-thumb" src="" alt="" style="width:100px;height:150px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--surface-el);display:none">
-      <div style="flex:1;min-width:0">
-        <h3 id="modal-title" style="margin-bottom:4px"></h3>
-        <div class="text-sec text-sm" id="modal-sub"></div>
-        <div class="text-sm mt-8" id="modal-summary" style="max-height:80px;overflow:hidden;color:var(--text-sec)"></div>
-        <div class="text-sm text-sec mt-8" id="modal-meta"></div>
-      </div>
-    </div>
-
-    <!-- Playback options -->
-    <div class="mt-16" id="play-section">
-      <div style="font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Play</div>
-      <div class="btn-group" id="play-btns">
-        <button class="btn btn-primary" id="btn-plex-web" onclick="openPlexWeb()" disabled>
-          Open in Plex Web
-        </button>
-        <button class="btn btn-secondary" id="btn-stream" onclick="openStream()" disabled>
-          ▶ Watch
-        </button>
-        <button class="btn btn-secondary btn-sm" id="btn-copy-url" onclick="copyStreamUrl()" style="display:none">
-          Copy Raw URL
-        </button>
-      </div>
-
-      <!-- Plex clients -->
-      <div id="clients-section" class="mt-8" style="display:none">
-        <div style="font-size:12px;color:var(--text-sec);margin-bottom:6px">Send to Plex Player:</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="client-select" style="flex:1;min-width:140px">
-            <option value="">Select a player...</option>
+        <div class="form-group">
+          <label>Content Type</label>
+          <select id="b-type">
+            <option value="mixed">Mixed (movies + series)</option>
+            <option value="movie">Movies only</option>
+            <option value="series">Series / Episodes only</option>
+            <option value="music">Music</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="playOnClient()">Play</button>
+        </div>
+        <div class="form-group">
+          <label>Genres (press Enter after each)</label>
+          <div class="tag-input" id="b-genres-container"
+            onclick="focusTagInput('b-genres-input')">
+            <input type="text" id="b-genres-input" placeholder="e.g. Comedy"
+              onkeydown="addTag(event,'b-genres')">
+          </div>
+          <input type="hidden" id="b-genres" value="[]">
+        </div>
+        <div class="form-group">
+          <label>Studios / Networks (press Enter after each)</label>
+          <div class="tag-input" id="b-studios-container"
+            onclick="focusTagInput('b-studios-input')">
+            <input type="text" id="b-studios-input" placeholder="e.g. HBO"
+              onkeydown="addTag(event,'b-studios')">
+          </div>
+          <input type="hidden" id="b-studios" value="[]">
+        </div>
+        <div class="form-group">
+          <label>Keywords (press Enter after each)</label>
+          <div class="tag-input" id="b-keywords-container"
+            onclick="focusTagInput('b-keywords-input')">
+            <input type="text" id="b-keywords-input" placeholder="e.g. Christmas"
+              onkeydown="addTag(event,'b-keywords')">
+          </div>
+          <input type="hidden" id="b-keywords" value="[]">
+        </div>
+        <div class="form-group">
+          <label>Max Year (leave blank for no limit)</label>
+          <input type="number" id="b-max-year" placeholder="e.g. 1999">
+        </div>
+        <div class="form-group">
+          <label>Sorting Method</label>
+          <select id="b-sorting">
+            <option value="RANDOM">Random (default)</option>
+            <option value="CYCLIC_SHUFFLE">Cyclic Shuffle (season-grouped)</option>
+            <option value="BLOCK_SHUFFLE">Block Shuffle (themed blocks, shuffled)</option>
+            <option value="BLOCK_CYCLIC">Block Cyclic (themed blocks, ordered)</option>
+          </select>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="previewChannel()">Preview Match Count</button>
+          <button class="btn btn-primary" onclick="createChannel()">Create Channel</button>
+        </div>
+        <div class="mt-8 text-sm text-sec" id="preview-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS TAB ══ -->
+  <div class="tab-content" id="tab-settings">
+    <div class="tab-inner">
+      <div class="settings-section">
+        <h3>Plex Connection</h3>
+        <div id="conn-alert"></div>
+        <div class="form-group">
+          <label>Plex Server URL</label>
+          <input type="text" id="s-plex-url" placeholder="http://192.168.1.100:32400">
+        </div>
+        <div class="form-group">
+          <label>Plex Token</label>
+          <input type="password" id="s-plex-token" placeholder="Your X-Plex-Token">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveConnection()">Save &amp; Connect</button>
         </div>
       </div>
 
-      <div id="play-loading" class="text-sec text-sm mt-8" style="display:none">Loading playback options...</div>
-      <div id="play-error" class="alert alert-error mt-8" style="display:none"></div>
-    </div>
+      <div class="settings-section">
+        <h3>Library Sync</h3>
+        <div class="text-sec text-sm" style="margin-bottom:10px">
+          Select the Plex library sections to use for channel content.
+        </div>
+        <div id="lib-alert"></div>
+        <div id="lib-list" class="text-sec text-sm">Connect to Plex to list libraries.</div>
+        <div class="btn-group mt-8">
+          <button class="btn btn-secondary" onclick="loadLibraries()">Refresh Libraries</button>
+          <button class="btn btn-primary" onclick="startSync()" id="btn-sync">Sync Selected</button>
+        </div>
+        <div id="sync-status-bar" class="hidden mt-8">
+          <div class="status-msg" id="sync-msg"></div>
+          <div class="progress-bar">
+            <div class="fill" id="sync-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
 
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <div class="settings-section">
+        <h3>Schedule Settings</h3>
+        <div class="form-group">
+          <label>Days to schedule ahead</label>
+          <input type="number" id="s-days" value="3" min="1" max="14">
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="s-align" checked style="width:auto;margin-right:6px">
+            Align programs to quarter-hour boundaries (00/15/30/45 min)
+          </label>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="buildSchedule()">Build Schedule Now</button>
+          <button class="btn btn-danger btn-sm" onclick="clearSchedule()">Clear All Programs</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Library Statistics</h3>
+        <div class="info-grid" id="lib-stats">
+          <div class="info-stat">
+            <div class="val" id="stat-movies">—</div>
+            <div class="lbl">Movies</div>
+          </div>
+          <div class="info-stat">
+            <div class="val" id="stat-episodes">—</div>
+            <div class="lbl">Episodes</div>
+          </div>
+          <div class="info-stat">
+            <div class="val" id="stat-shows">—</div>
+            <div class="lbl">Shows</div>
+          </div>
+        </div>
+        <div class="text-sm text-sec mt-8" id="cache-info"></div>
+      </div>
     </div>
   </div>
-</div>
+</div><!-- /app -->
 
-<!-- Edit channel modal -->
+<!-- Edit channel modal (kept) -->
 <div class="modal-overlay" id="ch-edit-modal">
   <div class="modal" style="max-width:520px">
     <h3 id="ch-edit-title">Edit Channel</h3>
@@ -435,20 +758,26 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
     </div>
     <div class="form-group">
       <label>Genres (press Enter after each)</label>
-      <div class="tag-input" id="ch-edit-genres-container" onclick="focusTagInput('ch-edit-genres-input')">
-        <input type="text" id="ch-edit-genres-input" placeholder="e.g. Comedy" onkeydown="addEditTag(event,'genres')">
+      <div class="tag-input" id="ch-edit-genres-container"
+        onclick="focusTagInput('ch-edit-genres-input')">
+        <input type="text" id="ch-edit-genres-input" placeholder="e.g. Comedy"
+          onkeydown="addEditTag(event,'genres')">
       </div>
     </div>
     <div class="form-group">
       <label>Studios / Networks (press Enter after each)</label>
-      <div class="tag-input" id="ch-edit-studios-container" onclick="focusTagInput('ch-edit-studios-input')">
-        <input type="text" id="ch-edit-studios-input" placeholder="e.g. HBO" onkeydown="addEditTag(event,'studios')">
+      <div class="tag-input" id="ch-edit-studios-container"
+        onclick="focusTagInput('ch-edit-studios-input')">
+        <input type="text" id="ch-edit-studios-input" placeholder="e.g. HBO"
+          onkeydown="addEditTag(event,'studios')">
       </div>
     </div>
     <div class="form-group">
       <label>Keywords (press Enter after each)</label>
-      <div class="tag-input" id="ch-edit-keywords-container" onclick="focusTagInput('ch-edit-keywords-input')">
-        <input type="text" id="ch-edit-keywords-input" placeholder="e.g. Christmas" onkeydown="addEditTag(event,'keywords')">
+      <div class="tag-input" id="ch-edit-keywords-container"
+        onclick="focusTagInput('ch-edit-keywords-input')">
+        <input type="text" id="ch-edit-keywords-input" placeholder="e.g. Christmas"
+          onkeydown="addEditTag(event,'keywords')">
       </div>
     </div>
     <div class="form-group">
@@ -471,47 +800,83 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   </div>
 </div>
 
+<!-- hls.js for HLS playback (required on non-Safari browsers) -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
 <script>
-// ── State ──────────────────────────────────────────────────────────────────────
-let guideStart = Math.floor(Date.now() / 1000);
-let guideHours = 4;
-let selectedLibraries = new Set();
-let statusPoll = null;
+// ══════════════════════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════════════════════
+const HALF_HOUR_MS = 30 * 60 * 1000;
+const TWO_HOUR_MS  = 2  * 60 * 60 * 1000;
+const PX_PER_MS    = 6 / 60000;   // 6 pixels per minute
+const CH_COL_PX    = 120;
 
-// ── Utility ────────────────────────────────────────────────────────────────────
+// Guide view state
+let _guideViewStart = Math.floor(Date.now() / HALF_HOUR_MS) * HALF_HOUR_MS;
+let _guideData      = null;        // { start, end, channels }
+let _selectedProg   = null;        // currently highlighted program
+let _selectedCh     = null;        // channel of selected program
+let _navChIdx       = 0;
+let _navProgIdx     = 0;
+
+// HLS state
+let _hlsInstance    = null;
+let _hlsKey         = null;        // rating_key of currently loaded HLS
+let _hlsProgStart   = 0;           // start_time of currently loaded program
+let _liveDebounce   = null;
+let _autoAdvanceTimer = null;      // auto-advance to next program when current ends
+
+// Scroll tracking — suppress auto-scroll while user is browsing
+let _userScrolled   = false;   // true = user scrolled away from live
+let _autoScrolling  = false;   // true = we triggered the scroll, ignore the event
+
+// Status poll
+let _statusPoll     = null;
+let _selectedLibraries = new Set();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Utilities
+// ══════════════════════════════════════════════════════════════════════════════
 function fmt(ms) {
-  const d = new Date(ms);
-  return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  return new Date(ms).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 function fmtDate(ms) {
   const d = new Date(ms);
-  return d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}) +
-         ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) +
+         ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function alert$(el, msg, type) {
-  el.innerHTML = msg
-    ? `<div class="alert alert-${type}">${msg}</div>`
-    : '';
+  el.innerHTML = msg ? `<div class="alert alert-${type}">${msg}</div>` : '';
 }
 function typeBadge(type) {
-  const map = {movie:'movie',series:'series',mixed:'mixed',music:'music',weather:'weather'};
-  const t = map[type] || 'mixed';
+  const t = {movie:'movie',series:'series',mixed:'mixed',music:'music',weather:'weather'}[type] || 'mixed';
   return `<span class="badge badge-${t}">${t}</span>`;
 }
+function chColorIdx(num) { return ((num % 8) + 8) % 8; }
 
-// ── Tab switching ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Tab switching
+// ══════════════════════════════════════════════════════════════════════════════
 function switchTab(id) {
   document.querySelectorAll('.tab,.tab-content').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
+  const tabs = ['guide','channels','builder','settings'];
   document.querySelectorAll('.tab').forEach((el, i) => {
-    if (['guide','channels','builder','settings'][i] === id) el.classList.add('active');
+    if (tabs[i] === id) el.classList.add('active');
   });
-  if (id === 'guide') loadGuide();
+  if (id === 'guide')    loadGuide();
   if (id === 'channels') loadChannelList();
   if (id === 'settings') loadSettings();
 }
 
-// ── Status polling ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Status polling
+// ══════════════════════════════════════════════════════════════════════════════
 async function pollStatus() {
   try {
     const r = await fetch('/api/status');
@@ -525,287 +890,708 @@ async function pollStatus() {
       dot.className = 'status-dot';
       lbl.textContent = d.has_token ? 'Cannot reach server' : 'Not connected';
     }
-    // Update stats
     if (d.content_counts) {
-      document.getElementById('stat-movies').textContent = d.content_counts.movies.toLocaleString();
-      document.getElementById('stat-episodes').textContent = d.content_counts.episodes.toLocaleString();
-      document.getElementById('stat-shows').textContent = d.content_counts.shows.toLocaleString();
+      const s = d.content_counts;
+      const el = id => document.getElementById(id);
+      if (el('stat-movies'))   el('stat-movies').textContent   = s.movies.toLocaleString();
+      if (el('stat-episodes')) el('stat-episodes').textContent = s.episodes.toLocaleString();
+      if (el('stat-shows'))    el('stat-shows').textContent    = s.shows.toLocaleString();
     }
     if (d.cache && d.cache.cached_at) {
-      document.getElementById('cache-info').textContent =
-        'Last synced: ' + new Date(d.cache.cached_at * 1000).toLocaleString();
+      const ci = document.getElementById('cache-info');
+      if (ci) ci.textContent = 'Last synced: ' + new Date(d.cache.cached_at * 1000).toLocaleString();
     }
     // Sync status
     const ss = d.sync_status;
     const syncBar = document.getElementById('sync-status-bar');
-    if (ss && ss.running) {
-      syncBar.classList.remove('hidden');
-      document.getElementById('sync-msg').textContent = ss.message;
-      const pct = ss.total > 0 ? Math.round(ss.progress / ss.total * 100) : 0;
-      document.getElementById('sync-fill').style.width = pct + '%';
-    } else if (syncBar && !syncBar.classList.contains('hidden') && ss && !ss.running) {
-      document.getElementById('sync-msg').textContent = ss.message || 'Done';
-      document.getElementById('sync-fill').style.width = '100%';
-      setTimeout(() => syncBar.classList.add('hidden'), 3000);
+    if (syncBar) {
+      if (ss && ss.running) {
+        syncBar.classList.remove('hidden');
+        document.getElementById('sync-msg').textContent = ss.message;
+        const pct = ss.total > 0 ? Math.round(ss.progress / ss.total * 100) : 0;
+        document.getElementById('sync-fill').style.width = pct + '%';
+      } else if (!syncBar.classList.contains('hidden') && ss && !ss.running) {
+        document.getElementById('sync-msg').textContent = ss.message || 'Done';
+        document.getElementById('sync-fill').style.width = '100%';
+        setTimeout(() => syncBar.classList.add('hidden'), 3000);
+      }
     }
     // Schedule status
-    const schBar = document.getElementById('schedule-status-bar');
     const sch = d.schedule_status;
-    if (sch && sch.running) {
-      schBar.classList.remove('hidden');
-      document.getElementById('schedule-msg').textContent = sch.message;
-      const pct = sch.total > 0 ? Math.round(sch.progress / sch.total * 100) : 0;
-      document.getElementById('schedule-fill').style.width = pct + '%';
-      document.getElementById('btn-build').disabled = true;
-    } else if (schBar && sch && !sch.running) {
-      document.getElementById('schedule-msg').textContent = sch.message || 'Done';
-      document.getElementById('schedule-fill').style.width = '100%';
-      document.getElementById('btn-build').disabled = false;
-      if (!schBar.classList.contains('hidden')) {
-        loadGuide();
-        setTimeout(() => schBar.classList.add('hidden'), 3000);
+    const schBar = document.getElementById('guide-sched-bar');
+    if (schBar) {
+      if (sch && sch.running) {
+        schBar.classList.remove('hidden');
+        document.getElementById('schedule-msg').textContent = sch.message;
+        const pct = sch.total > 0 ? Math.round(sch.progress / sch.total * 100) : 0;
+        document.getElementById('schedule-fill').style.width = pct + '%';
+        const btn = document.getElementById('btn-build');
+        if (btn) btn.disabled = true;
+      } else if (sch && !sch.running) {
+        const btn = document.getElementById('btn-build');
+        if (btn) btn.disabled = false;
+        if (!schBar.classList.contains('hidden')) {
+          document.getElementById('schedule-msg').textContent = sch.message || 'Done';
+          document.getElementById('schedule-fill').style.width = '100%';
+          loadGuide();
+          setTimeout(() => schBar.classList.add('hidden'), 3000);
+        }
       }
     }
   } catch(e) {}
+  setTimeout(pollStatus, 3000);   // schedule next AFTER this one completes
 }
-setInterval(pollStatus, 3000);
-pollStatus();
+pollStatus();  // kick off the first poll
 
-// ── Guide ──────────────────────────────────────────────────────────────────────
-function shiftTime(hours) { guideStart += hours * 3600; loadGuide(); }
-function goToNow() { guideStart = Math.floor(Date.now() / 1000); loadGuide(); }
-
-// Program store — keyed by integer index so onclick never embeds unsafe JSON
-const _programs = [];
+// ══════════════════════════════════════════════════════════════════════════════
+// Guide loading + rendering
+// ══════════════════════════════════════════════════════════════════════════════
+function shiftGuide(hours) {
+  _guideViewStart += hours * 3600 * 1000;
+  loadGuide();
+}
+function goToGuideNow() {
+  _guideViewStart = Math.floor(Date.now() / HALF_HOUR_MS) * HALF_HOUR_MS;
+  loadGuide();
+}
 
 async function loadGuide() {
-  document.getElementById('guide-time-label').textContent =
-    'From: ' + fmtDate(guideStart * 1000);
-  const r = await fetch(`/api/guide?start=${guideStart}&hours=${guideHours}`);
-  const d = await r.json();
-  const tbody = document.getElementById('guide-body');
-  if (!d.channels || d.channels.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-sec)">No guide data — sync your library and build the schedule first.</td></tr>';
+  // Always ensure _guideViewStart is anchored to a window that contains now.
+  // If the current time has moved past 75% of the stored window (or beyond it),
+  // snap the start to the nearest half-hour ≤ now so the fetch covers live content.
+  const nowMs = Date.now();
+  const windowEnd = _guideViewStart + 4 * 60 * 60 * 1000;
+  if (nowMs >= windowEnd - 60 * 60 * 1000) {
+    // Less than 1 hour left in the current window — re-anchor to now
+    _guideViewStart = Math.floor(nowMs / HALF_HOUR_MS) * HALF_HOUR_MS;
+  }
+
+  const startSec = Math.floor(_guideViewStart / 1000);
+  try {
+    const r = await fetch(`/api/guide?start=${startSec}&hours=4`);
+    _guideData = await r.json();
+  } catch(e) {
+    document.getElementById('guide-grid-rows').innerHTML =
+      '<div style="padding:20px;color:var(--text-sec)">Failed to load guide.</div>';
     return;
   }
-  // Clear program store on each guide reload
-  _programs.length = 0;
+  renderGuideGrid();
+  autoSelectFirstLive();
+  setTimeout(scrollToNow, 100);
+}
 
+function renderGuideGrid() {
+  if (!_guideData) return;
+  const { start: gStart, end: gEnd, channels } = _guideData;
+  const totalMs = gEnd - gStart;
+  const totalPx = Math.round(totalMs * PX_PER_MS);
+
+  // ── Time header
+  renderTimeHeader(totalPx, gStart, gEnd);
+
+  // ── Channel rows
+  const rowsEl = document.getElementById('guide-grid-rows');
+  rowsEl.innerHTML = '';
   const nowMs = Date.now();
-  let rows = '';
-  for (const ch of d.channels) {
-    const progs = ch.programs || [];
-    let progsHtml = '';
-    if (progs.length === 0) {
-      progsHtml = '<div class="no-prog">No programs scheduled</div>';
-    } else {
-      for (const p of progs) {
-        const idx = _programs.length;
-        _programs.push(p);
-        const isNow = p.start_time <= nowMs && p.end_time > nowMs;
-        const cls = isNow ? 'prog-item now-playing' : 'prog-item';
-        const sub = p.type === 'episode'
-          ? (p.episode_title || (p.season_number ? `S${p.season_number}E${p.episode_number}` : ''))
-          : (p.content_rating || '');
-        // Use data-idx — never embed raw JSON in onclick attributes
-        const thumbSrc = p.thumb_url
-          ? `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`
-          : '';
-        progsHtml += `<div class="${cls}" data-idx="${idx}">
-          <img class="prog-thumb" data-src="${thumbSrc}" alt="" onerror="this.style.display='none'">
-          <div class="prog-text">
-            <div class="prog-title">${escHtml(p.title || 'Unknown')}</div>
-            ${sub ? `<div class="prog-sub">${escHtml(sub)}</div>` : ''}
-            <div class="prog-time">${fmt(p.start_time)}–${fmt(p.end_time)}</div>
-          </div>
-        </div>`;
+
+  if (!channels || channels.length === 0) {
+    rowsEl.innerHTML = '<div style="padding:20px;color:var(--text-sec);font-size:13px">' +
+      'No guide data — sync your library and build the schedule first.</div>';
+    return;
+  }
+
+  for (let ci = 0; ci < channels.length; ci++) {
+    const ch  = channels[ci];
+    const cIdx = chColorIdx(ch.number);
+
+    const row = document.createElement('div');
+    row.className = 'guide-ch-row';
+    row.dataset.chIdx = ci;
+
+    // Sticky channel label
+    const label = document.createElement('div');
+    label.className = 'guide-ch-label';
+    label.innerHTML =
+      `<div class="guide-label-num">${ch.number}</div>` +
+      `<div class="guide-label-name">${escHtml(ch.name)}</div>`;
+
+    // Program area
+    const progArea = document.createElement('div');
+    progArea.className = 'guide-ch-progs';
+    progArea.style.width = `${totalPx}px`;
+
+    for (let pi = 0; pi < (ch.programs || []).length; pi++) {
+      const p = ch.programs[pi];
+      const slotMs   = p.end_time - p.start_time;
+      const leftPx   = Math.round((Math.max(p.start_time, gStart) - gStart) * PX_PER_MS);
+      const widthPx  = Math.round(slotMs * PX_PER_MS);
+      const isNow    = p.start_time <= nowMs && p.end_time > nowMs;
+      const durMs    = p.duration_ms && p.duration_ms > 0 ? p.duration_ms : slotMs;
+      const contentMs = Math.min(durMs, slotMs);
+      const slateMs   = slotMs - contentMs;
+      const cPx = Math.round(contentMs * PX_PER_MS);
+      const sPx = Math.round(slateMs * PX_PER_MS);
+
+      // Content block
+      const block = document.createElement('div');
+      block.className = `guide-prog-block ch-c${cIdx} ch-b${cIdx}` +
+        (isNow ? ' now-live' : '');
+      block.style.cssText = `left:${leftPx + 1}px;width:${Math.max(cPx - 2, 20)}px`;
+      // Store nav indices on the element
+      block.dataset.chIdx   = ci;
+      block.dataset.progIdx = pi;
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'prog-block-title';
+      titleEl.textContent = p.show_title || p.title || 'Unknown';
+      block.appendChild(titleEl);
+
+      if (p.type === 'episode' && (p.episode_title || p.season_number)) {
+        const epEl = document.createElement('div');
+        epEl.className = 'prog-block-ep';
+        let epStr = '';
+        if (p.season_number) epStr = `S${String(p.season_number).padStart(2,'0')}E${String(p.episode_number||0).padStart(2,'0')}`;
+        if (p.episode_title) epStr += (epStr ? ' ' : '') + p.episode_title;
+        epEl.textContent = epStr;
+        block.appendChild(epEl);
+      }
+
+      if (isNow) {
+        const badge = document.createElement('div');
+        badge.className = 'prog-live-badge';
+        badge.textContent = '● LIVE';
+        block.appendChild(badge);
+      }
+
+      // Aired overlay — dark tint over the elapsed portion of a live block
+      if (isNow) {
+        const airedMs = Math.max(0, nowMs - Math.max(p.start_time, gStart));
+        const airedPx = Math.round(airedMs * PX_PER_MS);
+        if (airedPx > 0) {
+          const overlay = document.createElement('div');
+          overlay.className = 'prog-aired-overlay';
+          overlay.dataset.progStart = p.start_time;
+          overlay.dataset.gStart    = gStart;
+          overlay.style.width = `${airedPx}px`;
+          block.appendChild(overlay);
+        }
+      }
+
+      block.addEventListener('click', () => {
+        _navChIdx   = ci;
+        _navProgIdx = pi;
+        selectProgram(p, ch, block);
+      });
+      progArea.appendChild(block);
+
+      // Logo slate (padded gap)
+      if (sPx > 4) {
+        const slate = document.createElement('div');
+        slate.className = 'guide-prog-slate';
+        slate.style.cssText = `left:${leftPx + cPx + 1}px;width:${Math.max(sPx - 2, 4)}px`;
+        if (ch.logo_url) {
+          slate.innerHTML = `<img src="${ch.logo_url}" alt="">`;
+        } else {
+          slate.innerHTML = `<span class="slate-dash">—</span>`;
+        }
+        slate.addEventListener('click', () => {
+          _navChIdx   = ci;
+          _navProgIdx = pi;
+          selectProgram(p, ch, block);
+        });
+        progArea.appendChild(slate);
       }
     }
-    rows += `<tr class="guide-row">
-      <td class="guide-ch-num">${ch.number}</td>
-      <td class="guide-ch-name">${escHtml(ch.name)}</td>
-      <td class="guide-programs"><div class="prog-strip">${progsHtml}</div></td>
-    </tr>`;
+
+    row.appendChild(label);
+    row.appendChild(progArea);
+    rowsEl.appendChild(row);
   }
-  tbody.innerHTML = rows;
 
-  // Attach click handlers after DOM is written
-  tbody.querySelectorAll('.prog-item[data-idx]').forEach(el => {
-    el.addEventListener('click', () => showProgram(_programs[parseInt(el.dataset.idx)]));
+  // Refresh aired overlays every 30 s
+  clearInterval(_airedOverlayInterval);
+  _airedOverlayInterval = setInterval(refreshAiredOverlays, 30000);
+}
+
+let _airedOverlayInterval = null;
+function refreshAiredOverlays() {
+  const nowMs = Date.now();
+  document.querySelectorAll('.prog-aired-overlay').forEach(el => {
+    const progStart = parseInt(el.dataset.progStart, 10);
+    const gStart    = parseInt(el.dataset.gStart,    10);
+    const airedMs = Math.max(0, nowMs - Math.max(progStart, gStart));
+    el.style.width = `${Math.round(airedMs * PX_PER_MS)}px`;
   });
+}
 
-  // Lazy-load thumbnails using IntersectionObserver so we only fetch
-  // images that are actually visible in the viewport
-  const imgObserver = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const img = entry.target;
-      const src = img.dataset.src;
-      if (src) {
-        img.src = src;
-        img.onload = () => img.classList.add('loaded');
-        delete img.dataset.src;
+function scheduleAutoAdvance(prog, ch) {
+  clearTimeout(_autoAdvanceTimer);
+  const msUntilEnd = prog.end_time - Date.now();
+  if (msUntilEnd <= 0) return;
+  _autoAdvanceTimer = setTimeout(() => {
+    // Reload guide data first in case the window has shifted
+    if (!_guideData) return;
+    const channels = _guideData.channels;
+    const chIdx = channels.findIndex(c => c.number === ch.number);
+    if (chIdx < 0) { loadGuide(); return; }
+    const progs = channels[chIdx].programs || [];
+    const progIdx = progs.findIndex(p => p.start_time === prog.start_time);
+    if (progIdx >= 0 && progIdx + 1 < progs.length) {
+      const next = progs[progIdx + 1];
+      _navChIdx   = chIdx;
+      _navProgIdx = progIdx + 1;
+      const block = document.querySelector(
+        `.guide-prog-block[data-ch-idx="${chIdx}"][data-prog-idx="${progIdx + 1}"]`
+      );
+      selectProgram(next, channels[chIdx], block);
+    } else {
+      // Next program not in current window — reload guide
+      loadGuide();
+    }
+  }, msUntilEnd);
+}
+
+function renderTimeHeader(totalPx, gStart, gEnd) {
+  const labelsEl = document.getElementById('guide-time-labels');
+  labelsEl.style.width = `${totalPx}px`;
+  labelsEl.innerHTML = '';
+
+  // Align to half-hour boundary at or before gStart
+  let t = Math.floor(gStart / HALF_HOUR_MS) * HALF_HOUR_MS;
+
+  while (t <= gEnd) {
+    if (t >= gStart) {
+      const leftPx = Math.round((t - gStart) * PX_PER_MS);
+      const tick = document.createElement('div');
+      tick.className = 'guide-time-tick';
+      tick.style.left = `${leftPx}px`;
+      tick.textContent = fmt(t);
+      labelsEl.appendChild(tick);
+    }
+    t += HALF_HOUR_MS;
+  }
+
+  // Subtle tick at current time position
+  const nowMs = Date.now();
+  if (nowMs >= gStart && nowMs < gEnd) {
+    const nowPx = Math.round((nowMs - gStart) * PX_PER_MS);
+    const tick = document.createElement('div');
+    tick.className = 'guide-now-tick';
+    tick.style.left = `${nowPx}px`;
+    labelsEl.appendChild(tick);
+  }
+}
+
+function scrollToNow() {
+  if (!_guideData) return;
+  _userScrolled  = false;
+  _autoScrolling = true;
+  const nowPx = Math.round((Date.now() - _guideData.start) * PX_PER_MS);
+  document.getElementById('guide-scroll-wrap').scrollLeft = Math.max(0, nowPx);
+  // Double-rAF ensures all pending scroll events have fired before we clear
+  // the suppression flag — avoids a race where the event fires after setTimeout
+  requestAnimationFrame(() => requestAnimationFrame(() => { _autoScrolling = false; }));
+}
+
+// Every 15 s: either reload a stale guide window or nudge the scroll to track live
+setInterval(() => {
+  if (!_guideData) return;
+  const nowMs = Date.now();
+  // If we're within 30 minutes of the guide window end, reload with a fresh anchor
+  if (nowMs >= _guideData.end - 30 * 60 * 1000) {
+    loadGuide();          // loadGuide() will re-anchor _guideViewStart automatically
+  } else if (!_userScrolled) {
+    scrollToNow();
+  }
+}, 15000);
+
+function autoSelectFirstLive() {
+  if (!_guideData || !_guideData.channels.length) return;
+  const nowMs = Date.now();
+  for (let ci = 0; ci < _guideData.channels.length; ci++) {
+    const ch = _guideData.channels[ci];
+    for (let pi = 0; pi < (ch.programs || []).length; pi++) {
+      const p = ch.programs[pi];
+      if (p.start_time <= nowMs && p.end_time > nowMs) {
+        _navChIdx   = ci;
+        _navProgIdx = pi;
+        // Find the rendered block element
+        const block = document.querySelector(
+          `.guide-prog-block[data-ch-idx="${ci}"][data-prog-idx="${pi}"]`
+        );
+        selectProgram(p, ch, block);
+        return;
       }
-      obs.unobserve(img);
-    });
-  }, { rootMargin: '200px' });
-
-  tbody.querySelectorAll('.prog-thumb[data-src]').forEach(img => imgObserver.observe(img));
+    }
+  }
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// Program selection + info panel
+// ══════════════════════════════════════════════════════════════════════════════
+function selectProgram(p, ch, blockEl) {
+  _selectedProg = p;
+  _selectedCh   = ch;
+  const nowMs  = Date.now();
+  const isLive = p.start_time <= nowMs && p.end_time > nowMs;
 
-// ── Program modal + playback ───────────────────────────────────────────────────
-let _currentStreamUrl = null;
-let _currentPlexWebUrl = null;
-let _currentRatingKey = null;
-let _currentMediaType = null;
+  // ── Info panel
+  document.getElementById('guide-show-title').textContent =
+    p.show_title || p.title || 'Unknown';
 
-function showProgram(p) {
-  _currentRatingKey = p.rating_key;
-  _currentMediaType = p.type;
-  _currentStreamUrl = null;
-  _currentPlexWebUrl = null;
+  let epInfo = '';
+  if (p.type === 'episode') {
+    if (p.season_number)
+      epInfo = `S${String(p.season_number).padStart(2,'0')}E${String(p.episode_number||0).padStart(2,'0')}`;
+    if (p.episode_title) epInfo += (epInfo ? ' — ' : '') + p.episode_title;
+  }
+  document.getElementById('guide-ep-info').textContent = epInfo;
+  document.getElementById('guide-time-ch').textContent =
+    `${fmt(p.start_time)}–${fmt(p.end_time)} · Ch ${ch.number} ${ch.name}`;
 
-  // Populate header
-  document.getElementById('modal-title').textContent = p.show_title || p.title || 'Unknown';
-  let sub = '';
-  if (p.type === 'episode' && p.episode_title) sub = p.episode_title;
-  if (p.season_number) sub += (sub ? ' — ' : '') + `S${String(p.season_number).padStart(2,'0')}E${String(p.episode_number || 0).padStart(2,'0')}`;
-  document.getElementById('modal-sub').textContent = sub;
-  document.getElementById('modal-summary').textContent = p.summary || '';
-  const meta = [
-    p.content_rating, p.video_resolution,
-    p.audio_codec ? p.audio_codec.toUpperCase() : null,
-    fmt(p.start_time) + '–' + fmt(p.end_time)
-  ].filter(Boolean).join(' · ');
-  document.getElementById('modal-meta').textContent = meta;
+  // Badges
+  const badges = [];
+  if (p.content_rating)  badges.push(`<span class="badge-cr">${escHtml(p.content_rating)}</span>`);
+  if (p.video_resolution) badges.push(`<span class="badge-res">${escHtml(p.video_resolution)}</span>`);
+  if (isLive) badges.push('<span class="badge-live">LIVE</span>');
+  document.getElementById('guide-badges').innerHTML = badges.join('');
 
-  // Thumbnail — route through /api/thumb proxy (avoids CORS & keeps token server-side)
-  const thumb = document.getElementById('modal-thumb');
-  if (p.thumb_url) {
+  // Summary
+  document.getElementById('guide-summary').textContent = p.summary || '';
+
+  // Channel logo
+  const logoBox = document.getElementById('guide-ch-logo-box');
+  if (ch.logo_url) {
+    logoBox.innerHTML = `<img src="${ch.logo_url}" alt="${escHtml(ch.name)}"
+      onerror="this.parentElement.innerHTML='<span class=ch-num-fb>${escHtml(ch.number)}</span>'">`;
+  } else {
+    logoBox.innerHTML = `<span class="ch-num-fb">${ch.number}</span>`;
+  }
+
+  // Thumbnail (non-live only)
+  const thumb = document.getElementById('guide-prog-thumb');
+  if (!isLive && p.thumb_url) {
     thumb.src = `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`;
     thumb.style.display = 'block';
     thumb.onerror = () => { thumb.style.display = 'none'; };
   } else {
     thumb.style.display = 'none';
+    thumb.src = '';
   }
 
-  // Reset play section
-  document.getElementById('btn-plex-web').disabled = true;
-  document.getElementById('btn-stream').disabled = true;
-  document.getElementById('btn-copy-url').style.display = 'none';
-  document.getElementById('clients-section').style.display = 'none';
-  document.getElementById('play-loading').style.display = 'block';
-  document.getElementById('play-error').style.display = 'none';
+  // Play Now (non-live with rating key)
+  const btnPlay = document.getElementById('btn-play-now');
+  btnPlay.style.display = (p.rating_key && !isLive) ? 'inline-flex' : 'none';
 
-  document.getElementById('prog-modal').classList.add('open');
+  // Live seek button
+  document.getElementById('vctr-live').style.display = isLive ? 'inline-flex' : 'none';
 
-  // Async: fetch stream info + clients
-  if (p.rating_key) {
-    loadPlaybackOptions(p.rating_key, p.type);
+  // Highlight row + block
+  document.querySelectorAll('.guide-ch-row.row-selected').forEach(r => r.classList.remove('row-selected'));
+  document.querySelectorAll('.guide-prog-block.selected').forEach(b => b.classList.remove('selected'));
+  if (blockEl) {
+    blockEl.classList.add('selected');
+    const row = blockEl.closest('.guide-ch-row');
+    if (row) row.classList.add('row-selected');
+  }
+
+  // ── HLS live preview + auto-advance
+  if (isLive && p.rating_key) {
+    clearTimeout(_liveDebounce);
+    _liveDebounce = setTimeout(() => loadLivePreview(p.rating_key, p.start_time), 300);
+    scheduleAutoAdvance(p, ch);
   } else {
-    document.getElementById('play-loading').style.display = 'none';
-    document.getElementById('play-error').textContent = 'No media key — cannot play this item.';
-    document.getElementById('play-error').style.display = 'block';
+    clearTimeout(_autoAdvanceTimer);
+    destroyHls();
   }
 }
 
-async function loadPlaybackOptions(ratingKey, mediaType) {
-  try {
-    // Fetch stream info and clients in parallel
-    const [streamRes, clientsRes] = await Promise.all([
-      fetch(`/api/stream/${ratingKey}`),
-      fetch('/api/clients'),
-    ]);
-    const streamData = await streamRes.json();
-    const clientsData = await clientsRes.json();
+// ══════════════════════════════════════════════════════════════════════════════
+// HLS player management
+// ══════════════════════════════════════════════════════════════════════════════
+function loadLivePreview(ratingKey, startTimeMs) {
+  if (_hlsKey === ratingKey) return;
+  destroyHls();
+  _hlsKey       = ratingKey;
+  _hlsProgStart = startTimeMs;
 
-    document.getElementById('play-loading').style.display = 'none';
+  const video   = document.getElementById('guide-video');
+  const spinner = document.getElementById('guide-video-spinner');
+  const ph      = document.getElementById('guide-video-placeholder');
+  ph.style.display      = 'none';
+  spinner.style.display = 'flex';
 
-    if (streamData.stream_url) {
-      _currentStreamUrl = streamData.stream_url;
-      _currentPlexWebUrl = streamData.plex_web_url;
-      document.getElementById('btn-stream').disabled = false;
-      document.getElementById('btn-copy-url').style.display = 'inline-flex';
-      if (streamData.plex_web_url) {
-        document.getElementById('btn-plex-web').disabled = false;
+  fetch(`/api/hls_url/${ratingKey}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.hls_url || _hlsKey !== ratingKey) return;  // stale
+      spinner.style.display = 'none';
+      video.style.display   = 'block';
+
+      const offsetSec = Math.max(0, (Date.now() - startTimeMs) / 1000);
+
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        _hlsInstance = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          backBufferLength: 90,
+          startPosition: offsetSec,
+        });
+        _hlsInstance.loadSource(data.hls_url);
+        _hlsInstance.attachMedia(video);
+        _hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.currentTime = offsetSec;
+          video.muted = true;
+          video.play().catch(() => {});
+          updateVideoCtrlState();
+        });
+        _hlsInstance.on(Hls.Events.ERROR, (evt, d) => {
+          if (d.fatal) {
+            if (d.type === Hls.ErrorTypes.NETWORK_ERROR) _hlsInstance.startLoad();
+            else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) _hlsInstance.recoverMediaError();
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = data.hls_url;
+        video.addEventListener('loadedmetadata', () => {
+          video.currentTime = offsetSec;
+          video.muted = true;
+          video.play().catch(() => {});
+          updateVideoCtrlState();
+        }, { once: true });
       }
-    } else if (streamData.error) {
-      document.getElementById('play-error').textContent = streamData.error;
-      document.getElementById('play-error').style.display = 'block';
-    }
+    })
+    .catch(() => {
+      spinner.style.display = 'none';
+      ph.style.display = 'flex';
+    });
+}
 
-    // Plex clients
-    const clients = clientsData.clients || [];
-    if (clients.length > 0) {
-      const sel = document.getElementById('client-select');
-      sel.innerHTML = '<option value="">Select a player...</option>' +
-        clients.map(c =>
-          `<option value="${c.machineIdentifier || c.name}">${c.name || c.machineIdentifier}</option>`
-        ).join('');
-      document.getElementById('clients-section').style.display = 'block';
-    }
-  } catch(e) {
-    document.getElementById('play-loading').style.display = 'none';
-    document.getElementById('play-error').textContent = 'Failed to load playback options.';
-    document.getElementById('play-error').style.display = 'block';
+function destroyHls() {
+  if (_hlsInstance) {
+    _hlsInstance.destroy();
+    _hlsInstance = null;
+  }
+  _hlsKey = null;
+  const video = document.getElementById('guide-video');
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  video.style.display = 'none';
+  document.getElementById('guide-video-placeholder').style.display = 'flex';
+  document.getElementById('guide-video-spinner').style.display = 'none';
+  updateVideoCtrlState();
+}
+
+// ── Video controls
+function updateVideoCtrlState() {
+  const video = document.getElementById('guide-video');
+  document.getElementById('vctr-play').textContent = video.paused ? '▶' : '⏸';
+  document.getElementById('vctr-mute').textContent = video.muted ? '🔊' : '🔇';
+}
+
+function guideTogglePlay() {
+  const v = document.getElementById('guide-video');
+  if (!v.src && !_hlsInstance) return;
+  v.paused ? v.play().catch(() => {}) : v.pause();
+  setTimeout(updateVideoCtrlState, 100);
+}
+
+function guideToggleMute() {
+  const v = document.getElementById('guide-video');
+  v.muted = !v.muted;
+  updateVideoCtrlState();
+}
+
+function guideSetVolume(val) {
+  const v = document.getElementById('guide-video');
+  v.volume = parseFloat(val);
+  v.muted  = v.volume === 0;
+  updateVideoCtrlState();
+}
+
+function guideFromStart() {
+  const v = document.getElementById('guide-video');
+  if (v.style.display === 'none') return;
+  v.currentTime = 0;
+  v.play().catch(() => {});
+}
+
+function guideSeekLive() {
+  if (!_selectedProg) return;
+  const v = document.getElementById('guide-video');
+  if (v.style.display === 'none') return;
+  const offsetSec = Math.max(0, (Date.now() - _hlsProgStart) / 1000);
+  v.currentTime = offsetSec;
+}
+
+function guideFullscreen() {
+  const v = document.getElementById('guide-video');
+  if (!document.fullscreenElement) {
+    v.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
   }
 }
 
-function openPlexWeb() {
-  if (_currentPlexWebUrl) window.open(_currentPlexWebUrl, '_blank');
+// Update play button icon on video events
+const _gvideo = document.getElementById('guide-video');
+_gvideo.addEventListener('play',  updateVideoCtrlState);
+_gvideo.addEventListener('pause', updateVideoCtrlState);
+
+// ── Play Now (non-live: load into guide player from start)
+function playNow() {
+  if (!_selectedProg || !_selectedProg.rating_key) return;
+  // Destroy any live stream and load this item from start
+  destroyHls();
+  _hlsKey       = _selectedProg.rating_key;
+  _hlsProgStart = 0;
+
+  const video   = document.getElementById('guide-video');
+  const spinner = document.getElementById('guide-video-spinner');
+  const ph      = document.getElementById('guide-video-placeholder');
+  ph.style.display      = 'none';
+  spinner.style.display = 'flex';
+
+  fetch(`/api/hls_url/${_selectedProg.rating_key}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.hls_url) throw new Error('No HLS URL');
+      spinner.style.display = 'none';
+      video.style.display   = 'block';
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        _hlsInstance = new Hls({ enableWorker: true, backBufferLength: 90 });
+        _hlsInstance.loadSource(data.hls_url);
+        _hlsInstance.attachMedia(video);
+        _hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.currentTime = 0;
+          video.muted = false;
+          video.play().catch(() => {});
+          updateVideoCtrlState();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = data.hls_url;
+        video.currentTime = 0;
+        video.muted = false;
+        video.play().catch(() => {});
+        updateVideoCtrlState();
+      }
+    })
+    .catch(() => {
+      spinner.style.display = 'none';
+      ph.style.display = 'flex';
+    });
 }
 
-function openStream() {
-  // Open the built-in HLS player (fixes AC3/DTS audio via server-side transcode)
-  if (_currentRatingKey) window.open(`/watch/${_currentRatingKey}`, '_blank');
+// ── Plex client playback from guide info panel
+async function loadGuideClients() {
+  try {
+    const r = await fetch('/api/clients');
+    const d = await r.json();
+    const clients = d.clients || [];
+    const sel = document.getElementById('guide-client-select');
+    sel.innerHTML = '<option value="">Send to player...</option>' +
+      clients.map(c =>
+        `<option value="${escHtml(c.machineIdentifier||c.name)}">${escHtml(c.name||c.machineIdentifier)}</option>`
+      ).join('');
+    if (clients.length > 0) {
+      document.getElementById('guide-client-wrap').style.display = 'flex';
+    }
+  } catch(e) {}
 }
 
-function copyStreamUrl() {
-  if (!_currentStreamUrl) return;
-  navigator.clipboard.writeText(_currentStreamUrl).then(() => {
-    const btn = document.getElementById('btn-copy-url');
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = orig, 2000);
-  });
-}
-
-async function playOnClient() {
-  const sel = document.getElementById('client-select');
+async function playOnGuideClient() {
+  const sel = document.getElementById('guide-client-select');
   const clientId = sel.value;
-  if (!clientId || !_currentRatingKey) return;
-  const r = await fetch('/api/play_on_client', {
+  if (!clientId || !_selectedProg || !_selectedProg.rating_key) return;
+  const nowMs = Date.now();
+  const offsetMs = _selectedProg.start_time <= nowMs
+    ? Math.max(0, nowMs - _selectedProg.start_time)
+    : 0;
+  await fetch('/api/play_on_client', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       client_identifier: clientId,
-      rating_key: _currentRatingKey,
-      media_type: _currentMediaType || 'movie',
+      rating_key: _selectedProg.rating_key,
+      media_type: _selectedProg.type || 'movie',
+      offset_ms: offsetMs,
     }),
   });
-  const d = await r.json();
-  if (d.ok) {
-    closeModal();
-  } else {
-    document.getElementById('play-error').textContent = d.error || 'Playback command failed.';
-    document.getElementById('play-error').style.display = 'block';
-  }
 }
 
-function closeModal() {
-  document.getElementById('prog-modal').classList.remove('open');
-}
-document.getElementById('prog-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('prog-modal')) closeModal();
+// ══════════════════════════════════════════════════════════════════════════════
+// Keyboard navigation (guide)
+// ══════════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('tab-guide').classList.contains('active')) return;
+  if (!_guideData || !_guideData.channels.length) return;
+  // Don't intercept if focus is in an input
+  if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+  const channels = _guideData.channels;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _navChIdx = Math.min(_navChIdx + 1, channels.length - 1);
+    navSelectCurrentPosition();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _navChIdx = Math.max(_navChIdx - 1, 0);
+    navSelectCurrentPosition();
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    const ch = channels[_navChIdx];
+    if (ch) {
+      _navProgIdx = Math.min(_navProgIdx + 1, (ch.programs || []).length - 1);
+      navSelectByIndex();
+    }
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    _navProgIdx = Math.max(_navProgIdx - 1, 0);
+    navSelectByIndex();
+  }
 });
 
-// ── Channels tab ───────────────────────────────────────────────────────────────
+function navSelectByIndex() {
+  const channels = _guideData && _guideData.channels;
+  if (!channels) return;
+  const ch = channels[_navChIdx];
+  if (!ch) return;
+  const p = (ch.programs || [])[_navProgIdx];
+  if (!p) return;
+  const block = document.querySelector(
+    `.guide-prog-block[data-ch-idx="${_navChIdx}"][data-prog-idx="${_navProgIdx}"]`
+  );
+  selectProgram(p, ch, block);
+  // Scroll block into view
+  if (block) block.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+}
+
+function navSelectCurrentPosition() {
+  // When changing channel, pick the program at the current time (or first program)
+  const channels = _guideData && _guideData.channels;
+  if (!channels) return;
+  const ch = channels[_navChIdx];
+  if (!ch || !ch.programs || !ch.programs.length) return;
+  const nowMs = Date.now();
+  // Try to find a program near the currently viewed time
+  let bestIdx = 0;
+  for (let i = 0; i < ch.programs.length; i++) {
+    if (ch.programs[i].start_time <= nowMs && ch.programs[i].end_time > nowMs) {
+      bestIdx = i;
+      break;
+    }
+  }
+  _navProgIdx = bestIdx;
+  navSelectByIndex();
+  // Scroll channel row into view
+  const row = document.querySelector(`.guide-ch-row[data-ch-idx="${_navChIdx}"]`);
+  if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Channels tab
+// ══════════════════════════════════════════════════════════════════════════════
 async function loadChannelList() {
   const r = await fetch('/api/channels');
   const d = await r.json();
@@ -815,33 +1601,32 @@ async function loadChannelList() {
     return;
   }
   list.innerHTML = d.channels.map(ch => {
-    // Logo area — click to upload a new logo
     const logoInner = ch.logo_url
       ? `<img src="${ch.logo_url}?t=${Date.now()}" alt="" onerror="this.style.display='none'">`
       : `<span>📷</span>`;
-    const logoArea = `<div class="ch-logo" title="Click to upload logo" onclick="triggerLogoUpload(${ch.number})">${logoInner}</div>
-      <input type="file" id="logo-file-${ch.number}" accept="image/*" style="display:none" onchange="uploadLogo(${ch.number},this)">`;
-
-    // Right-side action buttons
+    const logoArea = `<div class="ch-logo" title="Click to upload logo"
+        onclick="triggerLogoUpload(${ch.number})">${logoInner}</div>
+      <input type="file" id="logo-file-${ch.number}" accept="image/*" style="display:none"
+        onchange="uploadLogo(${ch.number},this)">`;
     const editBtn = `<button class="btn btn-secondary btn-sm" onclick="editChannel(${ch.number})">Edit</button>`;
-    const visBtn = ch.is_hidden
+    const visBtn  = ch.is_hidden
       ? `<button class="btn btn-secondary btn-sm" onclick="showChannel(${ch.number})">Show</button>`
       : `<button class="btn btn-secondary btn-sm" onclick="hideChannel(${ch.number})">Hide</button>`;
     let extraBtn = '';
     if (ch.is_custom) {
       extraBtn = `<button class="btn btn-danger btn-sm" onclick="deleteChannel(${ch.number})">Delete</button>`;
     } else if (ch.is_overridden) {
-      extraBtn = `<button class="btn btn-secondary btn-sm" onclick="restoreChannel(${ch.number})" title="Reset to default settings">Restore</button>`;
+      extraBtn = `<button class="btn btn-secondary btn-sm" onclick="restoreChannel(${ch.number})"
+        title="Reset to default settings">Restore</button>`;
     }
-
     return `<div class="ch-item ${ch.is_hidden ? 'hidden-ch' : ''}">
       ${logoArea}
       <span class="ch-num">${ch.number}</span>
       <span class="ch-name">${escHtml(ch.name)}</span>
       ${typeBadge(ch.type)}
-      ${ch.is_custom ? '<span class="badge badge-custom">custom</span>' : ''}
+      ${ch.is_custom   ? '<span class="badge badge-custom">custom</span>' : ''}
       ${ch.is_overridden ? '<span class="badge badge-edited">edited</span>' : ''}
-      ${ch.is_hidden ? '<span class="badge" style="background:#ef444422;color:#fca5a5">hidden</span>' : ''}
+      ${ch.is_hidden   ? '<span class="badge" style="background:#ef444422;color:#fca5a5">hidden</span>' : ''}
       <div class="ch-actions">${editBtn}${visBtn}${extraBtn}</div>
     </div>`;
   }).join('');
@@ -850,30 +1635,19 @@ async function loadChannelList() {
 function triggerLogoUpload(num) {
   document.getElementById('logo-file-' + num).click();
 }
-
 async function uploadLogo(num, input) {
   const file = input.files[0];
   if (!file) return;
   const form = new FormData();
   form.append('logo', file);
-  const r = await fetch(`/api/channels/${num}/logo`, {method: 'POST', body: form});
+  const r = await fetch(`/api/channels/${num}/logo`, { method: 'POST', body: form });
   const d = await r.json();
-  if (d.ok) {
-    loadChannelList();
-  } else {
-    alert(d.error || 'Upload failed');
-  }
-  input.value = '';  // reset so same file can be re-selected
+  if (d.ok) loadChannelList();
+  else alert(d.error || 'Upload failed');
+  input.value = '';
 }
-
-async function hideChannel(n) {
-  await fetch(`/api/channels/${n}/hide`, {method:'POST'});
-  loadChannelList();
-}
-async function showChannel(n) {
-  await fetch(`/api/channels/${n}/show`, {method:'POST'});
-  loadChannelList();
-}
+async function hideChannel(n) { await fetch(`/api/channels/${n}/hide`, {method:'POST'}); loadChannelList(); }
+async function showChannel(n) { await fetch(`/api/channels/${n}/show`, {method:'POST'}); loadChannelList(); }
 async function deleteChannel(n) {
   if (!confirm(`Delete channel ${n}? This cannot be undone.`)) return;
   await fetch(`/api/channels/${n}`, {method:'DELETE'});
@@ -885,8 +1659,8 @@ async function restoreChannel(n) {
   loadChannelList();
 }
 
-// ── Edit channel modal ─────────────────────────────────────────────────────────
-const _editTags = {genres: [], studios: [], keywords: []};
+// ── Edit channel modal
+const _editTags = { genres: [], studios: [], keywords: [] };
 
 function closeEditModal() {
   document.getElementById('ch-edit-modal').classList.remove('open');
@@ -900,21 +1674,18 @@ async function editChannel(num) {
   const d = await r.json();
   const ch = (d.channels || []).find(c => c.number === num);
   if (!ch) return;
-
   document.getElementById('ch-edit-number').value = num;
   document.getElementById('ch-edit-title').textContent = `Edit: ${ch.name}`;
-  document.getElementById('ch-edit-name').value = ch.name || '';
-  document.getElementById('ch-edit-type').value = ch.type || 'mixed';
+  document.getElementById('ch-edit-name').value  = ch.name || '';
+  document.getElementById('ch-edit-type').value  = ch.type || 'mixed';
   document.getElementById('ch-edit-max-year').value = ch.max_year || '';
-  document.getElementById('ch-edit-sorting').value = ch.sorting_method || 'RANDOM';
-
+  document.getElementById('ch-edit-sorting').value  = ch.sorting_method || 'RANDOM';
   _editTags.genres   = (ch.genres   || []).slice();
   _editTags.studios  = (ch.studios  || []).slice();
   _editTags.keywords = (ch.keywords || []).slice();
   renderEditTags('genres');
   renderEditTags('studios');
   renderEditTags('keywords');
-
   alert$(document.getElementById('ch-edit-alert'), '', '');
   document.getElementById('ch-edit-modal').classList.add('open');
 }
@@ -949,7 +1720,7 @@ function renderEditTags(field) {
 }
 
 async function saveChannelEdit() {
-  const num = parseInt(document.getElementById('ch-edit-number').value);
+  const num  = parseInt(document.getElementById('ch-edit-number').value);
   const name = document.getElementById('ch-edit-name').value.trim();
   if (!name) {
     alert$(document.getElementById('ch-edit-alert'), 'Channel name is required.', 'error');
@@ -957,13 +1728,12 @@ async function saveChannelEdit() {
   }
   const payload = {
     name,
-    type: document.getElementById('ch-edit-type').value,
-    genres:   _editTags.genres.slice(),
-    studios:  _editTags.studios.slice(),
-    keywords: _editTags.keywords.slice(),
-    max_year: document.getElementById('ch-edit-max-year').value
-      ? parseInt(document.getElementById('ch-edit-max-year').value)
-      : null,
+    type:           document.getElementById('ch-edit-type').value,
+    genres:         _editTags.genres.slice(),
+    studios:        _editTags.studios.slice(),
+    keywords:       _editTags.keywords.slice(),
+    max_year:       document.getElementById('ch-edit-max-year').value
+                      ? parseInt(document.getElementById('ch-edit-max-year').value) : null,
     sorting_method: document.getElementById('ch-edit-sorting').value,
   };
   const r = await fetch(`/api/channels/${num}`, {
@@ -972,16 +1742,14 @@ async function saveChannelEdit() {
     body: JSON.stringify(payload),
   });
   const d = await r.json();
-  if (d.ok) {
-    closeEditModal();
-    loadChannelList();
-  } else {
-    alert$(document.getElementById('ch-edit-alert'), d.error || 'Save failed.', 'error');
-  }
+  if (d.ok) { closeEditModal(); loadChannelList(); }
+  else alert$(document.getElementById('ch-edit-alert'), d.error || 'Save failed.', 'error');
 }
 
-// ── Channel builder ────────────────────────────────────────────────────────────
-const tagData = {genres: [], studios: [], keywords: []};
+// ══════════════════════════════════════════════════════════════════════════════
+// Channel builder
+// ══════════════════════════════════════════════════════════════════════════════
+const tagData = { genres: [], studios: [], keywords: [] };
 
 function focusTagInput(id) { document.getElementById(id).focus(); }
 
@@ -1008,39 +1776,15 @@ function renderTags(field) {
   tagData[field].forEach((t, i) => {
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.innerHTML = `${t}<span class="remove" onclick="removeTag('${field}',${i})">✕</span>`;
+    tag.innerHTML = `${escHtml(t)}<span class="remove" onclick="removeTag('${field}',${i})">✕</span>`;
     container.appendChild(tag);
   });
   container.appendChild(inp);
 }
 
-async function previewChannel() {
-  const number = parseInt(document.getElementById('b-number').value);
-  if (!number) { alert$( document.getElementById('builder-alert'), 'Enter a channel number first.', 'error'); return; }
-  // Try preview on a temporary basis by POSTing then fetching count
-  const body = buildChannelPayload();
-  if (!body) return;
-  // Use the /api/channels/custom endpoint but if it fails on number conflict, note it
-  // Instead do a dry-run via a different approach: just show genre/studio info
-  const r = await fetch('/api/channels/custom', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...body, _preview: true})
-  });
-  const d = await r.json();
-  if (d.ok !== undefined) {
-    document.getElementById('preview-result').textContent =
-      `Matching content: ${d.matching_count} items`;
-    // Delete the just-created channel if it was an actual insert (no-op for preview)
-  } else if (d.matching_count !== undefined) {
-    document.getElementById('preview-result').textContent =
-      `Matching content: ${d.matching_count} items`;
-  } else {
-    document.getElementById('preview-result').textContent = d.error || 'Error';
-  }
-}
-
 function buildChannelPayload() {
   const number = parseInt(document.getElementById('b-number').value);
-  const name = document.getElementById('b-name').value.trim();
+  const name   = document.getElementById('b-name').value.trim();
   if (!number || !name) {
     alert$(document.getElementById('builder-alert'), 'Channel number and name are required.', 'error');
     return null;
@@ -1048,20 +1792,38 @@ function buildChannelPayload() {
   return {
     number,
     name,
-    type: document.getElementById('b-type').value,
-    genres: tagData.genres,
-    studios: tagData.studios,
-    keywords: tagData.keywords,
-    max_year: document.getElementById('b-max-year').value ? parseInt(document.getElementById('b-max-year').value) : null,
+    type:           document.getElementById('b-type').value,
+    genres:         tagData.genres,
+    studios:        tagData.studios,
+    keywords:       tagData.keywords,
+    max_year:       document.getElementById('b-max-year').value
+                      ? parseInt(document.getElementById('b-max-year').value) : null,
     sorting_method: document.getElementById('b-sorting').value,
   };
+}
+
+async function previewChannel() {
+  const body = buildChannelPayload();
+  if (!body) return;
+  const r = await fetch('/api/channels/custom', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ ...body, _preview: true }),
+  });
+  const d = await r.json();
+  document.getElementById('preview-result').textContent =
+    (d.ok !== undefined || d.matching_count !== undefined)
+      ? `Matching content: ${d.matching_count ?? '?'} items`
+      : (d.error || 'Error');
 }
 
 async function createChannel() {
   const body = buildChannelPayload();
   if (!body) return;
   const r = await fetch('/api/channels/custom', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
   });
   const d = await r.json();
   if (d.ok) {
@@ -1073,7 +1835,9 @@ async function createChannel() {
   }
 }
 
-// ── Settings ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Settings
+// ══════════════════════════════════════════════════════════════════════════════
 async function loadSettings() {
   const r = await fetch('/api/status');
   const d = await r.json();
@@ -1082,27 +1846,30 @@ async function loadSettings() {
 }
 
 async function saveConnection() {
-  let url = document.getElementById('s-plex-url').value.trim().replace(/\/$/, '');
-  const token = document.getElementById('s-plex-token').value.trim();
-  if (!url || !token) {
+  let url   = document.getElementById('s-plex-url').value.trim().replace(/\/$/, '');
+  const tok = document.getElementById('s-plex-token').value.trim();
+  if (!url || !tok) {
     alert$(document.getElementById('conn-alert'), 'Both URL and token are required.', 'error');
     return;
   }
-  // Auto-add protocol if missing
   if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
   document.getElementById('s-plex-url').value = url;
   alert$(document.getElementById('conn-alert'), 'Connecting...', 'info');
   const r = await fetch('/api/connect', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({plex_url: url, plex_token: token})
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plex_url: url, plex_token: tok }),
   });
   const d = await r.json();
-  alert$(document.getElementById('conn-alert'), d.ok ? 'Connected successfully!' : (d.error || 'Failed'), d.ok ? 'success' : 'error');
+  alert$(document.getElementById('conn-alert'),
+    d.ok ? 'Connected successfully!' : (d.error || 'Failed'),
+    d.ok ? 'success' : 'error');
   if (d.ok) loadLibraries();
 }
 
 async function loadLibraries() {
   const div = document.getElementById('lib-list');
+  if (!div) return;
   div.innerHTML = '<div class="text-sec text-sm">Loading...</div>';
   try {
     const r = await fetch('/api/libraries');
@@ -1116,65 +1883,90 @@ async function loadLibraries() {
       <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer">
         <input type="checkbox" class="lib-check" value="${l.key}"
           style="width:auto" onchange="toggleLib('${l.key}',this.checked)"
-          ${selectedLibraries.has(l.key) ? 'checked' : ''}>
-        <span>${l.title}</span>
+          ${_selectedLibraries.has(l.key) ? 'checked' : ''}>
+        <span>${escHtml(l.title)}</span>
         <span class="badge badge-${l.type}">${l.type}</span>
-      </label>
-    `).join('');
+      </label>`).join('');
     if (libs.length === 0) div.innerHTML = '<div class="text-sec text-sm">No libraries found.</div>';
   } catch(e) {
     div.innerHTML = '<div class="alert alert-error">Could not reach server.</div>';
   }
 }
 function toggleLib(id, checked) {
-  if (checked) selectedLibraries.add(id);
-  else selectedLibraries.delete(id);
+  if (checked) _selectedLibraries.add(id);
+  else         _selectedLibraries.delete(id);
 }
 
 async function startSync() {
-  const libs = [...selectedLibraries];
-  if (libs.length === 0) {
+  const libs = [..._selectedLibraries];
+  if (!libs.length) {
     alert$(document.getElementById('lib-alert'), 'Select at least one library.', 'error');
     return;
   }
   alert$(document.getElementById('lib-alert'), '', '');
-  document.getElementById('sync-status-bar').classList.remove('hidden');
-  document.getElementById('sync-msg').textContent = 'Starting sync...';
-  document.getElementById('sync-fill').style.width = '0%';
+  const syncBar = document.getElementById('sync-status-bar');
+  if (syncBar) {
+    syncBar.classList.remove('hidden');
+    document.getElementById('sync-msg').textContent = 'Starting sync...';
+    document.getElementById('sync-fill').style.width = '0%';
+  }
   const r = await fetch('/api/sync', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({library_ids: libs})
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ library_ids: libs }),
   });
   const d = await r.json();
-  if (!d.ok) {
-    alert$(document.getElementById('lib-alert'), d.error || 'Sync failed', 'error');
-  }
+  if (!d.ok) alert$(document.getElementById('lib-alert'), d.error || 'Sync failed', 'error');
 }
 
 async function buildSchedule() {
-  const days = parseInt(document.getElementById('s-days')?.value || 3);
-  const align = document.getElementById('s-align')?.checked !== false;
-  document.getElementById('schedule-status-bar').classList.remove('hidden');
-  document.getElementById('schedule-msg').textContent = 'Starting...';
-  document.getElementById('schedule-fill').style.width = '0%';
-  document.getElementById('btn-build').disabled = true;
+  const daysEl  = document.getElementById('s-days');
+  const alignEl = document.getElementById('s-align');
+  const days  = parseInt(daysEl  ? daysEl.value  : 3);
+  const align = alignEl ? alignEl.checked : true;
+  const schBar = document.getElementById('guide-sched-bar');
+  if (schBar) {
+    schBar.classList.remove('hidden');
+    document.getElementById('schedule-msg').textContent = 'Starting...';
+    document.getElementById('schedule-fill').style.width = '0%';
+  }
+  const btnBuild = document.getElementById('btn-build');
+  if (btnBuild) btnBuild.disabled = true;
   await fetch('/api/schedule/build', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({days, align})
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ days, align }),
   });
 }
 
 async function clearSchedule() {
   if (!confirm('Delete all scheduled programs?')) return;
-  // Use the build endpoint with no content forces a rebuild; for a clear we just rebuild
   await fetch('/api/schedule/build', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({days: 0})
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ days: 0 }),
   });
 }
 
-// ── Boot ───────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Boot
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Detect manual scroll — pause auto-scroll while user browses
+document.getElementById('guide-scroll-wrap').addEventListener('scroll', () => {
+  if (_autoScrolling) return;  // ignore programmatic scrolls
+  if (!_guideData) return;
+  // Only mark as user-scrolled if they've moved more than 10 minutes away from
+  // "now" — this ignores sub-pixel rounding and brief auto-scroll settling
+  const nowPx = Math.round((Date.now() - _guideData.start) * PX_PER_MS);
+  const wrap  = document.getElementById('guide-scroll-wrap');
+  if (Math.abs(wrap.scrollLeft - nowPx) > Math.round(10 * 60 * 1000 * PX_PER_MS)) {
+    _userScrolled = true;
+  }
+}, { passive: true });
+
 loadGuide();
+loadGuideClients();
 </script>
 </body>
 </html>

@@ -50,6 +50,18 @@ app = Flask(__name__)
 _sync_status = {"running": False, "message": "", "progress": 0, "total": 0}
 _schedule_status = {"running": False, "message": "", "progress": 0, "total": 0}
 
+# Full-response cache for /api/status — prevents thread pile-up under heavy polling.
+# A single blocking lock ensures only ONE thread ever builds the response; all others
+# wait, then immediately return the already-cached result.  TTL must be ≥ poll interval.
+_status_response_cache = {"data": None, "at": 0.0}
+_STATUS_TTL = 5.0          # seconds between actual status computations
+_status_lock = threading.Lock()
+
+# Plex reachability sub-cache (only one thread hits the network at a time)
+_conn_cache = {"ok": False, "checked_at": 0.0}
+_CONN_CACHE_TTL = 30.0
+_conn_check_lock = threading.Lock()
+
 
 def _load_config() -> dict:
     if os.path.exists(CONFIG_PATH):
@@ -124,25 +136,47 @@ def index():
 
 @app.route("/api/status")
 def api_status():
-    cfg = _load_config()
-    connected = False
-    client = _get_client()
-    if client:
-        try:
-            connected = client.verify_connection()
-        except Exception:
-            pass
-    cache = db.get_cache_metadata()
-    counts = db.get_content_count()
-    return jsonify({
-        "connected": connected,
-        "plex_url": cfg.get("plex_url", ""),
-        "has_token": bool(cfg.get("plex_token")),
-        "cache": cache,
-        "content_counts": counts,
-        "sync_status": _sync_status,
-        "schedule_status": _schedule_status,
-    })
+    # Fast path: return cached response without any lock contention.
+    now = time.time()
+    if _status_response_cache["data"] is not None and (now - _status_response_cache["at"]) < _STATUS_TTL:
+        return _status_response_cache["data"]
+
+    # Slow path: acquire the lock and compute.  Because only ONE thread runs this
+    # block at a time, all other concurrent requests queue up and then hit the
+    # fast path above once the first thread finishes.
+    with _status_lock:
+        # Re-check inside the lock — another thread may have just computed it.
+        now = time.time()
+        if _status_response_cache["data"] is not None and (now - _status_response_cache["at"]) < _STATUS_TTL:
+            return _status_response_cache["data"]
+
+        cfg = _load_config()
+        client = _get_client()
+        # Check Plex reachability at most every _CONN_CACHE_TTL seconds.
+        if client and (now - _conn_cache["checked_at"]) > _CONN_CACHE_TTL:
+            if _conn_check_lock.acquire(blocking=False):
+                try:
+                    _conn_cache["checked_at"] = time.time()
+                    _conn_cache["ok"] = client.verify_connection()
+                except Exception:
+                    _conn_cache["ok"] = False
+                finally:
+                    _conn_check_lock.release()
+        connected = _conn_cache["ok"] if client else False
+        cache = db.get_cache_metadata()
+        counts = db.get_content_count()
+        resp = jsonify({
+            "connected": connected,
+            "plex_url": cfg.get("plex_url", ""),
+            "has_token": bool(cfg.get("plex_token")),
+            "cache": cache,
+            "content_counts": counts,
+            "sync_status": _sync_status,
+            "schedule_status": _schedule_status,
+        })
+        _status_response_cache["data"] = resp
+        _status_response_cache["at"] = time.time()
+        return resp
 
 
 @app.route("/api/connect", methods=["POST"])
@@ -313,6 +347,7 @@ def api_guide():
             "number": cfg.number,
             "name": cfg.name,
             "type": cfg.type,
+            "logo_url": _logo_url(cfg.number),
             "programs": progs,
         })
     # Custom channels
@@ -325,6 +360,7 @@ def api_guide():
                 "number": d["number"],
                 "name": d["name"],
                 "type": d.get("type", "mixed"),
+                "logo_url": _logo_url(d["number"]),
                 "programs": progs,
             })
         except Exception:
@@ -689,6 +725,68 @@ def watch(rating_key: str):
                            title=title,
                            thumb_url=thumb_url,
                            rating_key=rating_key)
+
+
+@app.route("/api/hls_url/<rating_key>")
+def api_hls_url(rating_key: str):
+    """Return HLS transcode URL + metadata for embedding in the guide player."""
+    import uuid
+    from urllib.parse import urlencode
+
+    cfg = _load_config()
+    plex_url = cfg.get("plex_url", "")
+    token = cfg.get("plex_token", "")
+
+    if not plex_url or not token:
+        return jsonify({"error": "Not connected to Plex"}), 503
+
+    session_id = uuid.uuid4().hex[:16]
+    client_id = f"nostalgiavision-{session_id}"
+
+    hls_params = urlencode({
+        "X-Plex-Token": token,
+        "X-Plex-Product": "Nostalgiavision",
+        "X-Plex-Version": "0.3.17",
+        "X-Plex-Platform": "Chrome",
+        "X-Plex-Client-Identifier": client_id,
+        "path": f"/library/metadata/{rating_key}",
+        "protocol": "hls",
+        "directPlay": "0",
+        "directStream": "1",
+        "mediaIndex": "0",
+        "partIndex": "0",
+        "fastSeek": "1",
+        "subtitleSize": "100",
+        "session": session_id,
+    })
+    hls_url = f"{plex_url}/video/:/transcode/universal/start.m3u8?{hls_params}"
+
+    client = _get_client()
+    title = ""
+    thumb_url = None
+    duration_ms = None
+    try:
+        item = client.get_item_metadata(rating_key) if client else None
+        if item:
+            show = item.get("grandparentTitle") or item.get("title", "")
+            ep = item.get("title", "") if item.get("grandparentTitle") else ""
+            sn = item.get("parentIndex")
+            en = item.get("index")
+            ep_label = f"S{sn:02d}E{en:02d} — {ep}" if sn and en and ep else ep
+            title = f"{show}  {ep_label}".strip() if ep_label else show
+            thumb_path = item.get("thumb")
+            if thumb_path:
+                thumb_url = f"/api/thumb?path={requests.utils.quote(thumb_path, safe='')}"
+            duration_ms = item.get("duration")
+    except Exception:
+        pass
+
+    return jsonify({
+        "hls_url": hls_url,
+        "title": title,
+        "thumb_url": thumb_url,
+        "duration_ms": duration_ms,
+    })
 
 
 # ── Playback ──────────────────────────────────────────────────────────────────

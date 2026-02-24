@@ -184,11 +184,15 @@ class PlexClient:
     def verify_connection(self) -> bool:
         """Return True if we can reach the server AND the token is valid.
 
-        /identity is unauthenticated on Plex — use /library/sections instead
-        so a 401 (bad token) surfaces correctly.
+        Uses a short timeout with no retries so status polls don't pile up.
         """
         try:
-            self._get("/library/sections")
-            return True
+            import requests as _req
+            resp = _req.get(
+                f"{self.base_url}/library/sections",
+                headers={**PLEX_HEADERS, "X-Plex-Token": self.token},
+                timeout=(3, 5),
+            )
+            return resp.status_code < 400
         except Exception:
             return False

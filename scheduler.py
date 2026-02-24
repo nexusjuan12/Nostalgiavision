@@ -170,6 +170,7 @@ def _build_program(item: dict, channel_id: str, start_time: int,
         "thumb_url": item.get("thumb_url"),
         "art_url": item.get("art_url"),
         "clear_logo_url": item.get("clear_logo_url"),
+        "duration_ms": raw_dur,       # actual Plex duration (pre-alignment)
         "start_time": start_time,
         "end_time": end_time,
         "is_new": 0,
