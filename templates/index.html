@@ -434,23 +434,48 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   font-size:16px;color:#2a2a35;
 }
 
-/* 8-colour channel palette */
-.ch-c0{background:#12263d}
-.ch-c1{background:#1f1240}
-.ch-c2{background:#0e2e1c}
-.ch-c3{background:#2e1e0e}
-.ch-c4{background:#0e1e2e}
-.ch-c5{background:#2e0e1e}
-.ch-c6{background:#1e2e0e}
-.ch-c7{background:#0e2e2e}
-.ch-b0{border-color:#1e4a70!important}
-.ch-b1{border-color:#3a2070!important}
-.ch-b2{border-color:#1a5032!important}
-.ch-b3{border-color:#5a3a1a!important}
-.ch-b4{border-color:#1a3a5a!important}
-.ch-b5{border-color:#5a1a3a!important}
-.ch-b6{border-color:#3a5a1a!important}
-.ch-b7{border-color:#1a5a5a!important}
+/* Content-rating palette for program blocks */
+.cr-y  {background:#0a2210;border-color:#1a5228!important} /* G/TV-Y/TV-Y7   */
+.cr-pg {background:#0a1830;border-color:#1a3a6a!important} /* PG/TV-PG       */
+.cr-14 {background:#221608;border-color:#5a3a10!important} /* TV-14/PG-13    */
+.cr-ma {background:#220808;border-color:#5a1010!important} /* TV-MA/R/NC-17  */
+.cr-nr {background:#161616;border-color:#303030!important} /* NR / unknown   */
+
+/* ── Themes ─────────────────────────────────────────────────────────────── */
+[data-theme="crt"]{
+  --bg:#000;--surface:#001400;--surface-el:#002000;
+  --text:#33ff33;--text-sec:#1a8c1a;--accent:#00ff41;--accent-hover:#55ff66;
+  --border:#003a00;--divider:#001a00;
+}
+[data-theme="amber"]{
+  --bg:#0d0800;--surface:#1a1000;--surface-el:#261800;
+  --text:#ffb347;--text-sec:#8c5a1a;--accent:#ff8c00;--accent-hover:#ffaa33;
+  --border:#3d2000;--divider:#261500;
+}
+[data-theme="ocean"]{
+  --bg:#020c18;--surface:#061624;--surface-el:#0a2030;
+  --text:#dff4ff;--text-sec:#5d9ab0;--accent:#06b6d4;--accent-hover:#22d3ee;
+  --border:#0e3a50;--divider:#082840;
+}
+[data-theme="rose"]{
+  --bg:#120608;--surface:#1e0d12;--surface-el:#2a1018;
+  --text:#fce4ec;--text-sec:#b07080;--accent:#e91e63;--accent-hover:#f06292;
+  --border:#4a1020;--divider:#320c18;
+}
+[data-theme="mono"]{
+  --bg:#0a0a0a;--surface:#141414;--surface-el:#1e1e1e;
+  --text:#ffffff;--text-sec:#888;--accent:#ccc;--accent-hover:#fff;
+  --border:#2a2a2a;--divider:#1a1a1a;
+}
+
+/* Theme picker swatches */
+#theme-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.theme-swatch{
+  width:48px;height:36px;border-radius:6px;border:2px solid transparent;
+  cursor:pointer;transition:border-color .15s,transform .1s;
+}
+.theme-swatch:hover{transform:scale(1.08)}
+.theme-swatch.active{border-color:var(--accent)}
 
 /* ── Modal (edit channel only) ─── */
 .modal-overlay{position:fixed;inset:0;background:#00000080;z-index:100;
@@ -711,6 +736,33 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
       </div>
 
       <div class="settings-section">
+        <h3>Appearance</h3>
+        <div class="form-group">
+          <label>Theme</label>
+          <div id="theme-picker">
+            <button class="theme-swatch" data-theme=""
+              style="background:linear-gradient(135deg,#0F0F12 60%,#6366F1 60%)"
+              title="Midnight"></button>
+            <button class="theme-swatch" data-theme="crt"
+              style="background:linear-gradient(135deg,#000 60%,#00ff41 60%)"
+              title="CRT Green"></button>
+            <button class="theme-swatch" data-theme="amber"
+              style="background:linear-gradient(135deg,#0d0800 60%,#ff8c00 60%)"
+              title="Amber"></button>
+            <button class="theme-swatch" data-theme="ocean"
+              style="background:linear-gradient(135deg,#020c18 60%,#06b6d4 60%)"
+              title="Ocean"></button>
+            <button class="theme-swatch" data-theme="rose"
+              style="background:linear-gradient(135deg,#120608 60%,#e91e63 60%)"
+              title="Rose"></button>
+            <button class="theme-swatch" data-theme="mono"
+              style="background:linear-gradient(135deg,#0a0a0a 60%,#ccc 60%)"
+              title="Mono"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <h3>Schedule Settings</h3>
         <div class="form-group">
           <label>Days to schedule ahead</label>
@@ -864,7 +916,15 @@ function typeBadge(type) {
   const t = {movie:'movie',series:'series',mixed:'mixed',music:'music',weather:'weather'}[type] || 'mixed';
   return `<span class="badge badge-${t}">${t}</span>`;
 }
-function chColorIdx(num) { return ((num % 8) + 8) % 8; }
+function crClass(rating) {
+  if (!rating) return 'cr-nr';
+  const r = rating.toUpperCase();
+  if (r === 'G' || r === 'TV-G' || r === 'TV-Y' || r === 'TV-Y7') return 'cr-y';
+  if (r === 'PG' || r === 'TV-PG') return 'cr-pg';
+  if (r === 'PG-13' || r === 'TV-14') return 'cr-14';
+  if (r === 'R' || r === 'NC-17' || r === 'TV-MA') return 'cr-ma';
+  return 'cr-nr';
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Tab switching
@@ -1009,8 +1069,6 @@ function renderGuideGrid() {
 
   for (let ci = 0; ci < channels.length; ci++) {
     const ch  = channels[ci];
-    const cIdx = chColorIdx(ch.number);
-
     const row = document.createElement('div');
     row.className = 'guide-ch-row';
     row.dataset.chIdx = ci;
@@ -1041,7 +1099,7 @@ function renderGuideGrid() {
 
       // Content block
       const block = document.createElement('div');
-      block.className = `guide-prog-block ch-c${cIdx} ch-b${cIdx}` +
+      block.className = `guide-prog-block ${crClass(p.content_rating)}` +
         (isNow ? ' now-live' : '');
       block.style.cssText = `left:${leftPx + 1}px;width:${Math.max(cPx - 2, 20)}px`;
       // Store nav indices on the element
@@ -2025,6 +2083,29 @@ async function clearSchedule() {
   await fetch('/api/schedule/clear', { method: 'POST' });
   loadGuide();
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Theming
+// ══════════════════════════════════════════════════════════════════════════════
+
+function applyTheme(key) {
+  if (key) {
+    document.documentElement.dataset.theme = key;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+  localStorage.setItem('nv-theme', key || '');
+  document.querySelectorAll('.theme-swatch').forEach(b =>
+    b.classList.toggle('active', b.dataset.theme === (key || '')));
+}
+
+// Apply saved theme before first paint
+applyTheme(localStorage.getItem('nv-theme') || '');
+
+document.getElementById('theme-picker').addEventListener('click', e => {
+  const btn = e.target.closest('.theme-swatch');
+  if (btn) applyTheme(btn.dataset.theme);
+});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Boot

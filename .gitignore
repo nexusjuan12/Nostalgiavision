@@ -1,3 +1,11 @@
 
 # installers
 Miniconda3-latest-Linux-x86_64.sh
+
+# user credentials — copy config.example.json → config.json and fill in your values
+config.json
+
+# runtime data
+data/
+*.pyc
+__pycache__/

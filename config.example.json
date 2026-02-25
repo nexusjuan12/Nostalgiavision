@@ -1,0 +1,8 @@
+{
+  "plex_url": "http://192.168.1.100:32400",
+  "plex_token": "your-plex-token-here",
+  "library_ids": ["1"],
+  "schedule_days_ahead": 3,
+  "port": 5000,
+  "host": "0.0.0.0"
+}

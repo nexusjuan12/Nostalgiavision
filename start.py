@@ -14,6 +14,10 @@ import app as flask_app
 import json
 
 cfg_path = os.path.join(os.path.dirname(__file__), "config.json")
+if not os.path.exists(cfg_path):
+    print("ERROR: config.json not found.")
+    print("Copy config.example.json to config.json and fill in your Plex URL and token.")
+    sys.exit(1)
 with open(cfg_path) as f:
     cfg = json.load(f)
 
