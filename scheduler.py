@@ -361,7 +361,7 @@ def generate_channel_schedule(
 def build_schedules(
     configs: list,
     days: int = 3,
-    align: bool = True,
+    align: bool = False,
     progress_callback=None,
 ) -> dict:
     """Generate and persist schedules for all given channel configs.
@@ -394,12 +394,18 @@ def build_schedules(
 
         channel_id = str(cfg.number)
 
-        # Only extend — don't regenerate what's already scheduled
+        # Wipe all not-yet-started programs so re-builds after a library sync
+        # always produce a fresh schedule with correct rating_keys from the
+        # current content table.  Any currently-airing program is preserved so
+        # there is no playback interruption.
+        db.delete_channel_programs_from(channel_id, now_ms)
+
+        # Schedule from after the currently-airing program's end (if one exists)
+        # so there is no gap or overlap at the handoff point.
         latest = db.get_latest_program_end(channel_id)
-        gen_start = max(start_ms, latest) if latest > start_ms else start_ms
+        gen_start = latest if latest and latest > start_ms else start_ms
 
         if gen_start >= end_ms:
-            log.debug("Channel %d already has schedule through end of window", cfg.number)
             summary[cfg.number] = 0
             continue
 

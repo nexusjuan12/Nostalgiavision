@@ -381,7 +381,7 @@ def api_schedule_build():
 
     data = request.get_json(force=True) or {}
     days = int(data.get("days", _load_config().get("schedule_days_ahead", 3)))
-    align = bool(data.get("align", _load_config().get("align_to_quarter_hour", True)))
+    align = False  # back-to-back scheduling only; alignment removed
     channel_numbers = data.get("channels")  # None = all channels
 
     configs = _all_channel_configs()
@@ -408,6 +408,12 @@ def api_schedule_build():
 
     threading.Thread(target=_run, daemon=True).start()
     return jsonify({"ok": True, "message": "Schedule generation started"})
+
+
+@app.route("/api/schedule/clear", methods=["POST"])
+def api_schedule_clear():
+    db.clear_all_programs()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/channels/custom", methods=["POST"])

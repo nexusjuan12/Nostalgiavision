@@ -252,6 +252,15 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   animation:spin .8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+#guide-video-brb {
+  position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;background:#000;
+}
+#guide-brb-logo img { max-width:110px;max-height:72px;object-fit:contain;opacity:.85; }
+#guide-brb-logo span { font-size:28px;font-weight:700;color:#fff;opacity:.6; }
+#guide-brb-text {
+  font-size:11px;letter-spacing:.18em;color:#666;text-transform:uppercase;
+}
 
 /* Video controls (always visible bar at bottom of video panel) */
 #guide-video-controls{
@@ -537,6 +546,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
           <div id="guide-video-spinner">
             <div class="ring"></div>
           </div>
+          <div id="guide-video-brb">
+            <div id="guide-brb-logo"></div>
+            <div id="guide-brb-text">We'll Be Right Back</div>
+          </div>
         </div>
         <div id="guide-video-controls">
           <button class="vctr" id="vctr-play" onclick="guideTogglePlay()" title="Play/Pause">▶</button>
@@ -702,12 +715,6 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
         <div class="form-group">
           <label>Days to schedule ahead</label>
           <input type="number" id="s-days" value="3" min="1" max="14">
-        </div>
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="s-align" checked style="width:auto;margin-right:6px">
-            Align programs to quarter-hour boundaries (00/15/30/45 min)
-          </label>
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="buildSchedule()">Build Schedule Now</button>
@@ -1124,31 +1131,76 @@ function refreshAiredOverlays() {
   });
 }
 
+function showBRB(ch, nextProg, chIdx, progIdx) {
+  destroyHls();  // clears video, poster, placeholder
+  const brbEl = document.getElementById('guide-video-brb');
+  const logoEl = document.getElementById('guide-brb-logo');
+  logoEl.innerHTML = ch.logo_url
+    ? `<img src="${ch.logo_url}" alt="">`
+    : `<span>${ch.number}</span>`;
+  brbEl.style.display = 'flex';
+  document.getElementById('guide-video-placeholder').style.display = 'none';
+
+  // Fire when next program actually starts
+  const msUntilNext = Math.max(0, nextProg.start_time - Date.now());
+  _autoAdvanceTimer = setTimeout(() => {
+    brbEl.style.display = 'none';
+    if (!_guideData) return;
+    _navChIdx   = chIdx;
+    _navProgIdx = progIdx;
+    const block = document.querySelector(
+      `.guide-prog-block[data-ch-idx="${chIdx}"][data-prog-idx="${progIdx}"]`
+    );
+    selectProgram(nextProg, _guideData.channels[chIdx], block);
+  }, msUntilNext);
+}
+
+function _doAdvance(prog, ch) {
+  clearTimeout(_autoAdvanceTimer);
+  if (!_guideData) { destroyHls(); return; }
+  const channels = _guideData.channels;
+  const chIdx = channels.findIndex(c => c.number === ch.number);
+  if (chIdx < 0) { destroyHls(); loadGuide(); return; }
+  const progs = channels[chIdx].programs || [];
+  const progIdx = progs.findIndex(p => p.start_time === prog.start_time);
+  if (progIdx >= 0 && progIdx + 1 < progs.length) {
+    const next = progs[progIdx + 1];
+    _navChIdx   = chIdx;
+    _navProgIdx = progIdx + 1;
+    const block = document.querySelector(
+      `.guide-prog-block[data-ch-idx="${chIdx}"][data-prog-idx="${progIdx + 1}"]`
+    );
+    // Decide BRB vs. immediate play based on the *scheduled* gap between
+    // programs, not Date.now(). Back-to-back programs have a gap of ~0 ms
+    // and should never trigger BRB; only genuine schedule gaps (> 30 s) do.
+    const scheduledGapMs = next.start_time - prog.end_time;
+    if (scheduledGapMs > 30000) {
+      showBRB(channels[chIdx], next, chIdx, progIdx + 1);
+    } else {
+      // Back-to-back: play next at its scheduled start (or immediately if past)
+      const msUntilNext = Math.max(0, next.start_time - Date.now());
+      destroyHls();
+      if (msUntilNext === 0) {
+        selectProgram(next, channels[chIdx], block);
+      } else {
+        _autoAdvanceTimer = setTimeout(() => {
+          if (!_guideData) return;
+          selectProgram(next, _guideData.channels[chIdx],
+            document.querySelector(`.guide-prog-block[data-ch-idx="${chIdx}"][data-prog-idx="${progIdx + 1}"]`));
+        }, msUntilNext);
+      }
+    }
+  } else {
+    destroyHls();
+    loadGuide();
+  }
+}
+
 function scheduleAutoAdvance(prog, ch) {
   clearTimeout(_autoAdvanceTimer);
   const msUntilEnd = prog.end_time - Date.now();
-  if (msUntilEnd <= 0) return;
-  _autoAdvanceTimer = setTimeout(() => {
-    // Reload guide data first in case the window has shifted
-    if (!_guideData) return;
-    const channels = _guideData.channels;
-    const chIdx = channels.findIndex(c => c.number === ch.number);
-    if (chIdx < 0) { loadGuide(); return; }
-    const progs = channels[chIdx].programs || [];
-    const progIdx = progs.findIndex(p => p.start_time === prog.start_time);
-    if (progIdx >= 0 && progIdx + 1 < progs.length) {
-      const next = progs[progIdx + 1];
-      _navChIdx   = chIdx;
-      _navProgIdx = progIdx + 1;
-      const block = document.querySelector(
-        `.guide-prog-block[data-ch-idx="${chIdx}"][data-prog-idx="${progIdx + 1}"]`
-      );
-      selectProgram(next, channels[chIdx], block);
-    } else {
-      // Next program not in current window — reload guide
-      loadGuide();
-    }
-  }, msUntilEnd);
+  if (msUntilEnd <= 0) { _doAdvance(prog, ch); return; }
+  _autoAdvanceTimer = setTimeout(() => _doAdvance(prog, ch), msUntilEnd);
 }
 
 function renderTimeHeader(totalPx, gStart, gEnd) {
@@ -1349,12 +1401,29 @@ function loadLivePreview(ratingKey, startTimeMs) {
           video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
           updateVideoCtrlState();
         });
+        // When hls.js signals end-of-stream or the stream stalls at its end,
+        // advance immediately rather than waiting for the schedule timer.
+        const _advanceIfCurrent = () => {
+          if (_hlsKey !== ratingKey) return; // stale, user navigated away
+          clearTimeout(_autoAdvanceTimer);
+          _doAdvance(_selectedProg, _selectedCh);
+        };
         _hlsInstance.on(Hls.Events.ERROR, (evt, d) => {
+          if (_hlsKey !== ratingKey) return;
           if (d.fatal) {
-            if (d.type === Hls.ErrorTypes.NETWORK_ERROR) _hlsInstance.startLoad();
-            else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) _hlsInstance.recoverMediaError();
+            if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              // If we're past the scheduled end, stop retrying and advance
+              if (_selectedProg && Date.now() >= _selectedProg.end_time) {
+                _advanceIfCurrent();
+              } else {
+                _hlsInstance.startLoad();
+              }
+            } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              _hlsInstance.recoverMediaError();
+            }
           }
         });
+        video.addEventListener('ended', _advanceIfCurrent, { once: true });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = data.hls_url;
         video.addEventListener('loadedmetadata', () => {
@@ -1362,6 +1431,11 @@ function loadLivePreview(ratingKey, startTimeMs) {
           video.muted = false;
           video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
           updateVideoCtrlState();
+        }, { once: true });
+        video.addEventListener('ended', () => {
+          if (_hlsKey !== ratingKey) return;
+          clearTimeout(_autoAdvanceTimer);
+          _doAdvance(_selectedProg, _selectedCh);
         }, { once: true });
       }
     })
@@ -1387,6 +1461,8 @@ function destroyHls() {
   poster.src = '';
   document.getElementById('guide-video-placeholder').style.display = 'flex';
   document.getElementById('guide-video-spinner').style.display = 'none';
+  const brb = document.getElementById('guide-video-brb');
+  if (brb) brb.style.display = 'none';
   updateVideoCtrlState();
 }
 
@@ -1927,10 +2003,8 @@ async function startSync() {
 }
 
 async function buildSchedule() {
-  const daysEl  = document.getElementById('s-days');
-  const alignEl = document.getElementById('s-align');
-  const days  = parseInt(daysEl  ? daysEl.value  : 3);
-  const align = alignEl ? alignEl.checked : true;
+  const daysEl = document.getElementById('s-days');
+  const days   = parseInt(daysEl ? daysEl.value : 3);
   const schBar = document.getElementById('guide-sched-bar');
   if (schBar) {
     schBar.classList.remove('hidden');
@@ -1942,17 +2016,14 @@ async function buildSchedule() {
   await fetch('/api/schedule/build', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ days, align }),
+    body: JSON.stringify({ days }),
   });
 }
 
 async function clearSchedule() {
   if (!confirm('Delete all scheduled programs?')) return;
-  await fetch('/api/schedule/build', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ days: 0 }),
-  });
+  await fetch('/api/schedule/clear', { method: 'POST' });
+  loadGuide();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
