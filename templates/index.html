@@ -203,10 +203,6 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 #guide-info-body{
   display:flex;gap:10px;flex:1;min-height:0;overflow:hidden;
 }
-#guide-prog-thumb{
-  width:80px;height:118px;flex-shrink:0;border-radius:5px;
-  object-fit:cover;background:var(--surface-el);border:1px solid var(--border);
-}
 #guide-summary{
   font-size:12px;color:var(--text-sec);line-height:1.6;
   overflow:hidden;flex:1;
@@ -235,6 +231,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 #guide-video{
   width:100%;height:100%;object-fit:contain;background:#000;display:none;
+}
+#guide-video-poster{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;background:#000;display:none;
 }
 #guide-video-placeholder{
   position:absolute;inset:0;display:flex;flex-direction:column;
@@ -492,7 +492,6 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
         </div>
 
         <div id="guide-info-body">
-          <img id="guide-prog-thumb" src="" alt="">
           <div id="guide-summary">Load the guide and click a program to see details.</div>
         </div>
 
@@ -528,7 +527,8 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
       <!-- Video panel (right 34%) -->
       <div id="guide-video-panel">
         <div id="guide-video-wrap">
-          <video id="guide-video" muted playsinline></video>
+          <video id="guide-video" playsinline></video>
+          <img id="guide-video-poster" src="" alt="">
           <div id="guide-video-placeholder">
             <div class="icon">📡</div>
             <div>Live preview appears here</div>
@@ -1268,17 +1268,6 @@ function selectProgram(p, ch, blockEl) {
     logoBox.innerHTML = `<span class="ch-num-fb">${ch.number}</span>`;
   }
 
-  // Thumbnail (non-live only)
-  const thumb = document.getElementById('guide-prog-thumb');
-  if (!isLive && p.thumb_url) {
-    thumb.src = `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`;
-    thumb.style.display = 'block';
-    thumb.onerror = () => { thumb.style.display = 'none'; };
-  } else {
-    thumb.style.display = 'none';
-    thumb.src = '';
-  }
-
   // Play Now (non-live with rating key)
   const btnPlay = document.getElementById('btn-play-now');
   btnPlay.style.display = (p.rating_key && !isLive) ? 'inline-flex' : 'none';
@@ -1300,9 +1289,24 @@ function selectProgram(p, ch, blockEl) {
     clearTimeout(_liveDebounce);
     _liveDebounce = setTimeout(() => loadLivePreview(p.rating_key, p.start_time), 300);
     scheduleAutoAdvance(p, ch);
+    // Hide poster when going live
+    const poster = document.getElementById('guide-video-poster');
+    poster.style.display = 'none';
+    poster.src = '';
   } else {
     clearTimeout(_autoAdvanceTimer);
     destroyHls();
+    // Show thumbnail in video panel for non-live shows
+    const poster = document.getElementById('guide-video-poster');
+    if (p.thumb_url) {
+      poster.src = `/api/thumb?path=${encodeURIComponent(p.thumb_url)}`;
+      poster.style.display = 'block';
+      poster.onerror = () => { poster.style.display = 'none'; };
+      document.getElementById('guide-video-placeholder').style.display = 'none';
+    } else {
+      poster.style.display = 'none';
+      poster.src = '';
+    }
   }
 }
 
@@ -1341,8 +1345,8 @@ function loadLivePreview(ratingKey, startTimeMs) {
         _hlsInstance.attachMedia(video);
         _hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           video.currentTime = offsetSec;
-          video.muted = true;
-          video.play().catch(() => {});
+          video.muted = false;
+          video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
           updateVideoCtrlState();
         });
         _hlsInstance.on(Hls.Events.ERROR, (evt, d) => {
@@ -1355,8 +1359,8 @@ function loadLivePreview(ratingKey, startTimeMs) {
         video.src = data.hls_url;
         video.addEventListener('loadedmetadata', () => {
           video.currentTime = offsetSec;
-          video.muted = true;
-          video.play().catch(() => {});
+          video.muted = false;
+          video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
           updateVideoCtrlState();
         }, { once: true });
       }
@@ -1378,6 +1382,9 @@ function destroyHls() {
   video.removeAttribute('src');
   video.load();
   video.style.display = 'none';
+  const poster = document.getElementById('guide-video-poster');
+  poster.style.display = 'none';
+  poster.src = '';
   document.getElementById('guide-video-placeholder').style.display = 'flex';
   document.getElementById('guide-video-spinner').style.display = 'none';
   updateVideoCtrlState();
