@@ -2,6 +2,8 @@
 
 A self-hosted, retro TV experience powered by your Plex media server. NostalgiaVision turns your personal media library into a live TV broadcast — complete with a scrollable program guide, channel surfing, live preview, and automatic scheduling.
 
+Built with Python, runs on Windows and Linux, and opens in any modern web browser — no app install required.
+
 ![NostalgiaVision interface](image/screen.png)
 
 ## What it does
