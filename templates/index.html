@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nostalgiavision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -229,24 +231,31 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 
 /* Alternating row shading */
-#guide-grid-rows .guide-ch-row:nth-child(even) { background:rgba(255,255,255,.025); }
+#guide-grid-rows .guide-ch-row:nth-child(even) { background:#131318; }
 #guide-grid-rows .guide-ch-row:nth-child(even) > .guide-ch-label {
-  background:rgba(255,255,255,.025);
+  background:linear-gradient(to right,#131318 55%,transparent 100%);
 }
 
 /* Channel OSD */
 #guide-ch-osd {
-  position:absolute; bottom:44px; right:10px; z-index:9;
-  background:rgba(0,0,0,.65); border-radius:6px;
-  padding:6px 14px; display:flex; flex-direction:column;
-  align-items:flex-end; gap:2px; pointer-events:none;
+  position:absolute; top:10px; right:10px; z-index:11;
+  background:rgba(0,0,0,.55); border-radius:4px;
+  padding:4px 10px; display:flex; flex-direction:column;
+  align-items:flex-end; gap:1px; pointer-events:none;
   opacity:0; transition:opacity .25s;
 }
 #guide-ch-osd.visible { opacity:1; }
-#guide-ch-osd .osd-num { font-size:32px; font-weight:900; color:#fff; line-height:1; }
-#guide-ch-osd .osd-name { font-size:11px; color:rgba(255,255,255,.7);
-  text-align:right; max-width:120px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#guide-ch-osd .osd-num {
+  font-family:'VT323', monospace; font-size:36px; font-weight:400;
+  color:#00ff41; line-height:1; letter-spacing:2px;
+  text-shadow:0 0 8px rgba(0,255,65,.6);
+}
+#guide-ch-osd .osd-name {
+  font-family:'VT323', monospace; font-size:14px; color:rgba(0,255,65,.65);
+  text-align:right; max-width:110px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  letter-spacing:1px;
+}
 
 /* CRT scanlines overlay */
 #guide-video-wrap.scanlines::after {
@@ -420,14 +429,14 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   border-bottom:1px solid var(--divider);
   position:relative;
 }
-.guide-ch-row:hover>.guide-ch-label{background:#1e1e2e}
-.guide-ch-row.row-selected>.guide-ch-label{background:#1e1e35}
+.guide-ch-row:hover>.guide-ch-label{background:linear-gradient(to right,#1e1e2e 55%,transparent 100%)}
+.guide-ch-row.row-selected>.guide-ch-label{background:linear-gradient(to right,#1e1e35 55%,transparent 100%)}
 
 /* Sticky channel label */
 .guide-ch-label{
   width:var(--ch-col);min-width:var(--ch-col);
   position:sticky;left:0;z-index:10;
-  background:var(--bg);border-right:1px solid var(--border);
+  background:linear-gradient(to right,var(--bg) 55%,transparent 100%);border-right:1px solid var(--border);
   display:flex;flex-direction:column;justify-content:center;
   padding:0 8px;cursor:default;flex-shrink:0;transition:background .15s;
 }
