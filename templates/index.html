@@ -25,6 +25,7 @@ header{display:flex;align-items:stretch;height:44px;flex-shrink:0;
   border-bottom:1px solid var(--divider);background:var(--bg);gap:4px;padding:0 8px}
 header h1{font-size:17px;font-weight:700;letter-spacing:-.5px;
   display:flex;align-items:center;padding:0 10px;white-space:nowrap;flex-shrink:0}
+.header-logo { height:28px; width:auto; margin-right:6px; vertical-align:middle; }
 header h1 span{color:var(--accent)}
 .status-dot{width:8px;height:8px;border-radius:50%;background:var(--error);
   display:inline-block;margin-right:4px}
@@ -218,15 +219,49 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   animation:pulse-live 1.5s ease-in-out infinite}
 @keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.6}}
 
-/* Channel logo box (top-right of info panel) */
-#guide-ch-logo-box{
-  width:64px;height:64px;flex-shrink:0;border-radius:6px;
-  background:var(--surface-el);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
+/* Channel label-column logo */
+.guide-label-logo {
+  width:100%; height:28px; display:flex; align-items:center;
+  justify-content:center; margin-bottom:2px;
 }
-#guide-ch-logo-box img{width:100%;height:100%;object-fit:contain}
-#guide-ch-logo-box .ch-num-fb{
-  font-size:16px;font-weight:800;color:var(--accent);text-align:center}
+.guide-label-logo img {
+  max-width:90%; max-height:26px; object-fit:contain;
+}
+
+/* Alternating row shading */
+#guide-grid-rows .guide-ch-row:nth-child(even) { background:rgba(255,255,255,.025); }
+#guide-grid-rows .guide-ch-row:nth-child(even) > .guide-ch-label {
+  background:rgba(255,255,255,.025);
+}
+
+/* Channel OSD */
+#guide-ch-osd {
+  position:absolute; bottom:44px; right:10px; z-index:9;
+  background:rgba(0,0,0,.65); border-radius:6px;
+  padding:6px 14px; display:flex; flex-direction:column;
+  align-items:flex-end; gap:2px; pointer-events:none;
+  opacity:0; transition:opacity .25s;
+}
+#guide-ch-osd.visible { opacity:1; }
+#guide-ch-osd .osd-num { font-size:32px; font-weight:900; color:#fff; line-height:1; }
+#guide-ch-osd .osd-name { font-size:11px; color:rgba(255,255,255,.7);
+  text-align:right; max-width:120px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* CRT scanlines overlay */
+#guide-video-wrap.scanlines::after {
+  content:''; position:absolute; inset:0; z-index:6; pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 2px,
+    rgba(0,0,0,.18) 2px, rgba(0,0,0,.18) 4px
+  );
+}
+
+/* Settings toggles */
+.toggle-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.toggle-row input[type=checkbox] { width:auto; cursor:pointer; }
+.toggle-row label { cursor:pointer; font-size:13px; color:var(--text-sec); margin:0; }
 
 /* Info body: thumb + summary */
 #guide-info-body{
@@ -263,7 +298,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 #guide-video-poster{
   position:absolute;inset:0;width:100%;height:100%;
-  object-fit:contain;background:#000;display:none;
+  object-fit:cover;background:#000;display:none;
 }
 #guide-video-placeholder{
   position:absolute;inset:0;display:flex;flex-direction:column;
@@ -464,11 +499,11 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 
 /* Content-rating palette for program blocks */
-.cr-y  {background:#0a2210;border-color:#1a5228!important} /* G/TV-Y/TV-Y7   */
-.cr-pg {background:#0a1830;border-color:#1a3a6a!important} /* PG/TV-PG       */
-.cr-14 {background:#221608;border-color:#5a3a10!important} /* TV-14/PG-13    */
-.cr-ma {background:#220808;border-color:#5a1010!important} /* TV-MA/R/NC-17  */
-.cr-nr {background:#161616;border-color:#303030!important} /* NR / unknown   */
+.cr-y  {background:#1d6b36} /* green  — G/TV-Y/TV-Y7  */
+.cr-pg {background:#1b4a80} /* blue   — PG/TV-PG      */
+.cr-14 {background:#7a4d0e} /* amber  — TV-14/PG-13   */
+.cr-ma {background:#7a1a1a} /* red    — TV-MA/R/NC-17 */
+.cr-nr {background:#303045} /* indigo — NR / unknown  */
 
 /* ── Themes ─────────────────────────────────────────────────────────────── */
 [data-theme="crt"]{
@@ -520,7 +555,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 <body>
 <div class="app">
   <header>
-    <h1>Nostalgia<span>vision</span></h1>
+    <h1><img src="/image/1.png" class="header-logo" alt=""> Nostalgia<span>vision</span></h1>
     <div id="tab-strip">
       <div class="tab active" id="tab-btn-guide"     onclick="switchTab('guide')">Guide</div>
       <div class="tab"        id="tab-btn-channels"  onclick="switchTab('channels')">Channels</div>
@@ -550,9 +585,6 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
             <div id="guide-ep-info"></div>
             <div id="guide-time-ch"></div>
             <div id="guide-badges"></div>
-          </div>
-          <div id="guide-ch-logo-box">
-            <span class="ch-num-fb">—</span>
           </div>
         </div>
 
@@ -605,6 +637,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
           <div id="guide-video-brb">
             <div id="guide-brb-logo"></div>
             <div id="guide-brb-text">We'll Be Right Back</div>
+          </div>
+          <div id="guide-ch-osd">
+            <div class="osd-num"></div>
+            <div class="osd-name"></div>
           </div>
           <div id="fs-overlay">
             <div id="fs-info">
@@ -805,6 +841,14 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
               style="background:linear-gradient(135deg,#0a0a0a 60%,#ccc 60%)"
               title="Mono"></button>
           </div>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="toggle-scanlines" onchange="applyScanlines(this.checked)">
+          <label for="toggle-scanlines">CRT Scanlines on video</label>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="toggle-osd" onchange="applyOSD(this.checked)">
+          <label for="toggle-osd">Channel OSD on switch</label>
         </div>
       </div>
 
@@ -1130,9 +1174,12 @@ function renderGuideGrid() {
     // Sticky channel label
     const label = document.createElement('div');
     label.className = 'guide-ch-label';
-    label.innerHTML =
-      `<div class="guide-label-num">${ch.number}</div>` +
-      `<div class="guide-label-name">${escHtml(ch.name)}</div>`;
+    label.innerHTML = ch.logo_url
+      ? `<div class="guide-label-logo"><img src="${ch.logo_url}" alt="${escHtml(ch.name)}"
+           onerror="this.style.display='none'"></div>
+         <div class="guide-label-num">${ch.number}</div>`
+      : `<div class="guide-label-num">${ch.number}</div>
+         <div class="guide-label-name">${escHtml(ch.name)}</div>`;
 
     // Program area
     const progArea = document.createElement('div');
@@ -1423,15 +1470,6 @@ function selectProgram(p, ch, blockEl) {
   // Summary
   document.getElementById('guide-summary').textContent = p.summary || '';
 
-  // Channel logo
-  const logoBox = document.getElementById('guide-ch-logo-box');
-  if (ch.logo_url) {
-    logoBox.innerHTML = `<img src="${ch.logo_url}" alt="${escHtml(ch.name)}"
-      onerror="this.parentElement.innerHTML='<span class=ch-num-fb>${escHtml(ch.number)}</span>'">`;
-  } else {
-    logoBox.innerHTML = `<span class="ch-num-fb">${ch.number}</span>`;
-  }
-
   // Play Now (non-live with rating key)
   const btnPlay = document.getElementById('btn-play-now');
   btnPlay.style.display = (p.rating_key && !isLive) ? 'inline-flex' : 'none';
@@ -1461,6 +1499,7 @@ function selectProgram(p, ch, blockEl) {
     clearTimeout(_liveDebounce);
     _liveDebounce = setTimeout(() => loadLivePreview(p.rating_key, p.start_time), 300);
     scheduleAutoAdvance(p, ch);
+    showChannelOSD(ch);
     // Hide poster when going live
     const poster = document.getElementById('guide-video-poster');
     poster.style.display = 'none';
@@ -2188,6 +2227,50 @@ async function clearSchedule() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// Channel OSD
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _osdEnabled = localStorage.getItem('nv-osd') !== 'false'; // default ON
+let _osdTimer   = null;
+let _osdLastCh  = null;
+
+function showChannelOSD(ch) {
+  if (!_osdEnabled) return;
+  if (_osdLastCh === ch.number) return;
+  _osdLastCh = ch.number;
+  const osd = document.getElementById('guide-ch-osd');
+  osd.querySelector('.osd-num').textContent  = ch.number;
+  osd.querySelector('.osd-name').textContent = ch.name;
+  osd.classList.add('visible');
+  clearTimeout(_osdTimer);
+  _osdTimer = setTimeout(() => {
+    osd.classList.remove('visible');
+    _osdLastCh = null;
+  }, 2500);
+}
+
+function applyOSD(enabled) {
+  _osdEnabled = enabled;
+  localStorage.setItem('nv-osd', enabled);
+  const cb = document.getElementById('toggle-osd');
+  if (cb) cb.checked = enabled;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRT Scanlines
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _scanlinesEnabled = localStorage.getItem('nv-scanlines') === 'true'; // default OFF
+
+function applyScanlines(enabled) {
+  _scanlinesEnabled = enabled;
+  localStorage.setItem('nv-scanlines', enabled);
+  document.getElementById('guide-video-wrap').classList.toggle('scanlines', enabled);
+  const cb = document.getElementById('toggle-scanlines');
+  if (cb) cb.checked = enabled;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // Theming
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -2227,6 +2310,8 @@ document.getElementById('guide-scroll-wrap').addEventListener('scroll', () => {
   }
 }, { passive: true });
 
+applyScanlines(localStorage.getItem('nv-scanlines') === 'true');
+applyOSD(localStorage.getItem('nv-osd') !== 'false');
 loadGuide();
 loadGuideClients();
 </script>
