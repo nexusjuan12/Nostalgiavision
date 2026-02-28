@@ -20,24 +20,53 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 /* ── App shell ─── */
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-/* ── Header ─── */
-header{display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;height:40px;flex-shrink:0;
-  border-bottom:1px solid var(--divider);background:var(--bg)}
-header h1{font-size:18px;font-weight:700;letter-spacing:-.5px}
+/* ── Header (single bar: logo + tabs + status + toggle) ─── */
+header{display:flex;align-items:stretch;height:44px;flex-shrink:0;
+  border-bottom:1px solid var(--divider);background:var(--bg);gap:4px;padding:0 8px}
+header h1{font-size:17px;font-weight:700;letter-spacing:-.5px;
+  display:flex;align-items:center;padding:0 10px;white-space:nowrap;flex-shrink:0}
 header h1 span{color:var(--accent)}
 .status-dot{width:8px;height:8px;border-radius:50%;background:var(--error);
-  display:inline-block;margin-right:6px}
+  display:inline-block;margin-right:4px}
 .status-dot.ok{background:var(--success)}
-.status-text{font-size:12px;color:var(--text-sec);display:flex;align-items:center;gap:6px}
+.status-text{font-size:12px;color:var(--text-sec);display:flex;align-items:center;
+  gap:4px;padding:0 6px;white-space:nowrap}
+#header-right{display:flex;align-items:center;gap:4px;margin-left:auto}
 
-/* ── Tabs ─── */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--divider);flex-shrink:0;
-  background:var(--bg);padding:0 8px}
-.tab{padding:8px 18px;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;
-  margin-bottom:-1px;font-weight:500;font-size:13px;transition:all .2s;user-select:none}
+/* ── Tabs (inline in header) ─── */
+#tab-strip{display:flex;align-items:stretch;gap:0}
+.tab{padding:0 16px;cursor:pointer;color:var(--text-sec);
+  border-bottom:2px solid transparent;display:flex;align-items:center;
+  font-weight:500;font-size:13px;transition:color .15s,border-color .15s;
+  user-select:none;white-space:nowrap}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Tab-strip hide toggle */
+#tabs-toggle{background:none;border:1px solid var(--border);border-radius:5px;
+  color:var(--text-sec);cursor:pointer;padding:4px 8px;font-size:16px;line-height:1;
+  transition:color .15s,border-color .15s}
+#tabs-toggle:hover{color:var(--text);border-color:var(--accent)}
+
+/* ── Fullscreen overlay ─── */
+#fs-overlay{position:absolute;inset:0;z-index:10;display:flex;
+  flex-direction:column;justify-content:space-between;pointer-events:none;
+  opacity:0;transition:opacity .25s}
+#fs-overlay.fs-visible{opacity:1;pointer-events:auto}
+#guide-video-wrap.fs-idle{cursor:none}
+#fs-info{padding:20px 24px 0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.75) 0%,transparent 100%)}
+#fs-info-title{font-size:20px;font-weight:700;color:#fff}
+#fs-info-ep{font-size:13px;color:rgba(255,255,255,.65);margin-top:3px}
+#fs-controls{padding:0 20px 20px;
+  background:linear-gradient(to top,rgba(0,0,0,.8) 0%,transparent 100%);
+  display:flex;align-items:center;gap:8px}
+#fs-spacer{flex:1}
+.fs-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  border-radius:6px;color:#fff;cursor:pointer;padding:7px 13px;font-size:13px;
+  transition:background .15s;white-space:nowrap}
+.fs-btn:hover{background:rgba(255,255,255,.3)}
+#fs-vol{flex:0 0 100px;accent-color:#fff}
 
 /* ── Tab content ─── */
 .tab-content{display:none;flex:1;overflow:hidden}
@@ -492,18 +521,20 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 <div class="app">
   <header>
     <h1>Nostalgia<span>vision</span></h1>
-    <div class="status-text">
-      <span class="status-dot" id="status-dot"></span>
-      <span id="status-label">Checking...</span>
+    <div id="tab-strip">
+      <div class="tab active" id="tab-btn-guide"     onclick="switchTab('guide')">Guide</div>
+      <div class="tab"        id="tab-btn-channels"  onclick="switchTab('channels')">Channels</div>
+      <div class="tab"        id="tab-btn-builder"   onclick="switchTab('builder')">Channel Builder</div>
+      <div class="tab"        id="tab-btn-settings"  onclick="switchTab('settings')">Settings</div>
+    </div>
+    <div id="header-right">
+      <div class="status-text">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-label">Checking...</span>
+      </div>
+      <button id="tabs-toggle" onclick="toggleTabs()" title="Hide tabs">☰</button>
     </div>
   </header>
-
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('guide')">Guide</div>
-    <div class="tab" onclick="switchTab('channels')">Channels</div>
-    <div class="tab" onclick="switchTab('builder')">Channel Builder</div>
-    <div class="tab" onclick="switchTab('settings')">Settings</div>
-  </div>
 
   <!-- ══ GUIDE TAB ══ -->
   <div class="tab-content active" id="tab-guide">
@@ -574,6 +605,21 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
           <div id="guide-video-brb">
             <div id="guide-brb-logo"></div>
             <div id="guide-brb-text">We'll Be Right Back</div>
+          </div>
+          <div id="fs-overlay">
+            <div id="fs-info">
+              <div id="fs-info-title"></div>
+              <div id="fs-info-ep"></div>
+            </div>
+            <div id="fs-controls">
+              <button class="fs-btn" id="fs-play" onclick="guideTogglePlay()">▶</button>
+              <button class="fs-btn" id="fs-mute" onclick="guideToggleMute()">🔇</button>
+              <input type="range" id="fs-vol" min="0" max="1" step="0.02" value="1"
+                oninput="guideSetVolume(this.value)">
+              <button class="fs-btn" id="fs-live" onclick="guideSeekLive()" style="display:none">📡 Live</button>
+              <span id="fs-spacer"></span>
+              <button class="fs-btn" id="fs-exit" onclick="guideFullscreen()">⛶ Exit</button>
+            </div>
           </div>
         </div>
         <div id="guide-video-controls">
@@ -929,6 +975,14 @@ function crClass(rating) {
 // ══════════════════════════════════════════════════════════════════════════════
 // Tab switching
 // ══════════════════════════════════════════════════════════════════════════════
+function toggleTabs() {
+  const strip = document.getElementById('tab-strip');
+  const btn   = document.getElementById('tabs-toggle');
+  const hiding = strip.style.display !== 'none';
+  strip.style.display = hiding ? 'none' : '';
+  btn.title = hiding ? 'Show tabs' : 'Hide tabs';
+}
+
 function switchTab(id) {
   document.querySelectorAll('.tab,.tab-content').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
@@ -1382,8 +1436,16 @@ function selectProgram(p, ch, blockEl) {
   const btnPlay = document.getElementById('btn-play-now');
   btnPlay.style.display = (p.rating_key && !isLive) ? 'inline-flex' : 'none';
 
-  // Live seek button
+  // Live seek button (both normal bar and fullscreen overlay)
   document.getElementById('vctr-live').style.display = isLive ? 'inline-flex' : 'none';
+  const fsLive = document.getElementById('fs-live');
+  if (fsLive) fsLive.style.display = isLive ? 'inline-flex' : 'none';
+
+  // Fullscreen info panel — always update so it's correct when entering FS
+  const fsTitle = document.getElementById('fs-info-title');
+  const fsEp    = document.getElementById('fs-info-ep');
+  if (fsTitle) fsTitle.textContent = p.show_title || p.title || '';
+  if (fsEp)    fsEp.textContent    = epInfo;
 
   // Highlight row + block
   document.querySelectorAll('.guide-ch-row.row-selected').forEach(r => r.classList.remove('row-selected'));
@@ -1526,9 +1588,17 @@ function destroyHls() {
 
 // ── Video controls
 function updateVideoCtrlState() {
-  const video = document.getElementById('guide-video');
-  document.getElementById('vctr-play').textContent = video.paused ? '▶' : '⏸';
-  document.getElementById('vctr-mute').textContent = video.muted ? '🔊' : '🔇';
+  const video   = document.getElementById('guide-video');
+  const playTxt = video.paused ? '▶' : '⏸';
+  const muteTxt = video.muted  ? '🔊' : '🔇';
+  document.getElementById('vctr-play').textContent = playTxt;
+  document.getElementById('vctr-mute').textContent = muteTxt;
+  const fsPlay = document.getElementById('fs-play');
+  const fsMute = document.getElementById('fs-mute');
+  const fsVol  = document.getElementById('fs-vol');
+  if (fsPlay) fsPlay.textContent = playTxt;
+  if (fsMute) fsMute.textContent = muteTxt;
+  if (fsVol)  fsVol.value = video.volume;
 }
 
 function guideTogglePlay() {
@@ -1567,9 +1637,9 @@ function guideSeekLive() {
 }
 
 function guideFullscreen() {
-  const v = document.getElementById('guide-video');
+  const wrap = document.getElementById('guide-video-wrap');
   if (!document.fullscreenElement) {
-    v.requestFullscreen().catch(() => {});
+    wrap.requestFullscreen().catch(() => {});
   } else {
     document.exitFullscreen();
   }
@@ -1579,6 +1649,39 @@ function guideFullscreen() {
 const _gvideo = document.getElementById('guide-video');
 _gvideo.addEventListener('play',  updateVideoCtrlState);
 _gvideo.addEventListener('pause', updateVideoCtrlState);
+
+// ── Fullscreen overlay controls
+let _fsIdleTimer = null;
+
+function _showFsControls() {
+  const overlay = document.getElementById('fs-overlay');
+  const wrap    = document.getElementById('guide-video-wrap');
+  if (!document.fullscreenElement) return;
+  overlay.classList.add('fs-visible');
+  wrap.classList.remove('fs-idle');
+  clearTimeout(_fsIdleTimer);
+  _fsIdleTimer = setTimeout(() => {
+    overlay.classList.remove('fs-visible');
+    wrap.classList.add('fs-idle');
+  }, 3000);
+}
+
+document.addEventListener('fullscreenchange', () => {
+  const isFs   = !!document.fullscreenElement;
+  const overlay = document.getElementById('fs-overlay');
+  const wrap    = document.getElementById('guide-video-wrap');
+  if (isFs) {
+    _showFsControls();
+  } else {
+    overlay.classList.remove('fs-visible');
+    wrap.classList.remove('fs-idle');
+    clearTimeout(_fsIdleTimer);
+  }
+});
+
+document.getElementById('guide-video-wrap').addEventListener('mousemove', () => {
+  if (document.fullscreenElement) _showFsControls();
+}, { passive: true });
 
 // ── Play Now (non-live: load into guide player from start)
 function playNow() {
