@@ -222,12 +222,12 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 @keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.6}}
 
 /* Channel label-column logo */
-.guide-label-logo {
-  width:100%; height:28px; display:flex; align-items:center;
-  justify-content:center; margin-bottom:2px;
+.guide-label-top {
+  display:flex; align-items:center; gap:5px;
 }
-.guide-label-logo img {
-  max-width:90%; max-height:26px; object-fit:contain;
+.guide-label-logo {
+  height:14px; width:auto; max-width:40px; object-fit:contain;
+  flex-shrink:0;
 }
 
 /* Alternating row shading */
@@ -1183,12 +1183,11 @@ function renderGuideGrid() {
     // Sticky channel label
     const label = document.createElement('div');
     label.className = 'guide-ch-label';
-    label.innerHTML = ch.logo_url
-      ? `<div class="guide-label-logo"><img src="${ch.logo_url}" alt="${escHtml(ch.name)}"
-           onerror="this.style.display='none'"></div>
-         <div class="guide-label-num">${ch.number}</div>`
-      : `<div class="guide-label-num">${ch.number}</div>
-         <div class="guide-label-name">${escHtml(ch.name)}</div>`;
+    label.innerHTML = `<div class="guide-label-top">
+        <div class="guide-label-num">${ch.number}</div>
+        ${ch.logo_url ? `<img class="guide-label-logo" src="${ch.logo_url}" alt="" onerror="this.style.display='none'">` : ''}
+      </div>
+      <div class="guide-label-name">${escHtml(ch.name)}</div>`;
 
     // Program area
     const progArea = document.createElement('div');
