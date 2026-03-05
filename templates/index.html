@@ -5,26 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nostalgiavision</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0F0F12;--surface:#1A1A21;--surface-el:#232330;--text:#E8E8EB;
-  --text-sec:#9E9EA8;--accent:#6366F1;--accent-hover:#818cf8;
-  --border:#2A2A35;--divider:#1F1F28;--success:#22c55e;--error:#ef4444;
+  --bg:#0b1017;--surface:#151d28;--surface-el:#1d2735;--text:#e5edf7;
+  --text-sec:#8fa0b6;--accent:#5cc8d7;--accent-hover:#86deeb;
+  --border:#29384b;--divider:#1e2a39;--success:#22c55e;--error:#ef4444;
   --warning:#f59e0b;--radius:8px;
-  --ch-col:120px;--time-row:28px;--ch-row:54px;
+  --font-ui:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --glow-soft:0 0 24px rgba(92,200,215,.12);
+  --ch-col:120px;--time-row:28px;--ch-row:50px;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-family:var(--font-ui);
   font-size:14px;line-height:1.5;overflow:hidden}
 
 /* ── App shell ─── */
-.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  position:relative;
+  background:
+    radial-gradient(130% 75% at 50% -18%, rgba(92,200,215,.12) 0%, transparent 58%),
+    linear-gradient(180deg, #0e1520 0%, #0a1018 100%);
+}
+.app::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.18;
+  background-image:linear-gradient(transparent 96%,rgba(255,255,255,.06) 100%);
+  background-size:100% 3px;
+}
+.app > *{position:relative;z-index:1}
 
 /* ── Header (single bar: logo + tabs + status + toggle) ─── */
 header{display:flex;align-items:stretch;height:44px;flex-shrink:0;
-  border-bottom:1px solid var(--divider);background:var(--bg);gap:4px;padding:0 8px}
+  border-bottom:1px solid var(--divider);
+  background:linear-gradient(180deg,#192434 0%,#151d28 100%);
+  box-shadow:var(--glow-soft);
+  gap:4px;padding:0 8px}
 header h1{font-size:17px;font-weight:700;letter-spacing:-.5px;
   display:flex;align-items:center;padding:0 10px;white-space:nowrap;flex-shrink:0}
 .header-logo { height:28px; width:auto; margin-right:6px; vertical-align:middle; }
@@ -40,9 +57,10 @@ header h1 span{color:var(--accent)}
 #tab-strip{display:flex;align-items:stretch;gap:0}
 .tab{padding:0 16px;cursor:pointer;color:var(--text-sec);
   border-bottom:2px solid transparent;display:flex;align-items:center;
-  font-weight:500;font-size:13px;transition:color .15s,border-color .15s;
+  font-weight:500;font-size:13px;letter-spacing:.02em;
+  transition:color .15s,border-color .15s,background .15s;
   user-select:none;white-space:nowrap}
-.tab:hover{color:var(--text)}
+.tab:hover{color:var(--text);background:#21304466}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
 /* Tab-strip hide toggle */
@@ -70,6 +88,47 @@ header h1 span{color:var(--accent)}
   transition:background .15s;white-space:nowrap}
 .fs-btn:hover{background:rgba(255,255,255,.3)}
 #fs-vol{flex:0 0 100px;accent-color:#fff}
+#fs-mini-guide{
+  position:absolute;left:50%;transform:translate(-50%,6px);
+  width:min(86vw,760px);bottom:74px;z-index:12;
+  background:linear-gradient(180deg,rgba(12,19,30,.58) 0%,rgba(8,13,22,.52) 100%);
+  border:1px solid rgba(159,192,227,.24);border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.32);
+  backdrop-filter:blur(3px);
+  padding:8px 10px;opacity:0;
+  transition:opacity .18s,transform .18s;pointer-events:none;
+}
+#fs-mini-guide.visible{opacity:1;transform:translate(-50%,0)}
+#fs-mini-guide-title{
+  font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+  color:#b7c9dd;margin-bottom:4px;font-family:var(--font-mono);
+}
+#fs-mini-guide-hint{
+  font-size:10px;color:#8ea4bc;font-family:var(--font-mono);
+  margin-bottom:6px;letter-spacing:.03em;
+}
+#fs-mini-guide-list{display:flex;flex-direction:column;gap:4px}
+.fs-mini-row{
+  display:grid;grid-template-columns:56px minmax(120px,1fr) 2.2fr;
+  align-items:center;gap:8px;padding:3px 6px;border-radius:5px;
+  color:#d7e5f5;font-size:12px;background:rgba(6,11,18,.18);
+}
+.fs-mini-row.current{
+  background:rgba(92,200,215,.22);
+  outline:1px solid rgba(92,200,215,.55);
+}
+.fs-mini-row.playing{
+  box-shadow:inset 2px 0 0 rgba(134,222,235,.62);
+}
+.fs-mini-num{
+  color:#8ee3ed;font-family:var(--font-mono);font-weight:600;
+}
+.fs-mini-name{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e5edf7;
+}
+.fs-mini-prog{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#b3c2d1;
+}
 
 /* ── Tab content ─── */
 .tab-content{display:none;flex:1;overflow:hidden}
@@ -81,7 +140,8 @@ header h1 span{color:var(--accent)}
 
 /* ── Cards ─── */
 .card{background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:18px;margin-bottom:14px}
+  border-radius:var(--radius);padding:18px;margin-bottom:14px;
+  box-shadow:0 8px 28px rgba(0,0,0,.24)}
 .card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
 .card-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 
@@ -102,8 +162,8 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 .btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;
   font-size:13px;font-weight:500;transition:all .2s;
   display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary{background:linear-gradient(180deg,var(--accent-hover) 0%,var(--accent) 100%);color:#062126}
+.btn-primary:hover{filter:brightness(1.06)}
 .btn-secondary{background:var(--surface-el);color:var(--text);border:1px solid var(--border)}
 .btn-secondary:hover{border-color:var(--accent)}
 .btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid var(--error)}
@@ -195,7 +255,8 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 /* Info panel — left 66% */
 #guide-info-panel{
   flex:0 0 66%;display:flex;flex-direction:column;
-  background:#111118;border-right:1px solid var(--border);
+  background:linear-gradient(180deg,#141e2c 0%,#111a26 100%);
+  border-right:1px solid var(--border);
   overflow:hidden;padding:12px 14px 8px;gap:8px;min-width:0;
 }
 #guide-info-header{
@@ -231,9 +292,9 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 
 /* Alternating row shading */
-#guide-grid-rows .guide-ch-row:nth-child(even) { background:#17172a; }
+#guide-grid-rows .guide-ch-row:nth-child(even) { background:#141f2d; }
 #guide-grid-rows .guide-ch-row:nth-child(even) > .guide-ch-label {
-  background:linear-gradient(to right,#17172a 55%,transparent 100%);
+  background:linear-gradient(to right,#141f2d 55%,transparent 100%);
 }
 
 /* Channel OSD */
@@ -315,6 +376,16 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   color:var(--text-sec);font-size:13px;
 }
 #guide-video-placeholder .icon{font-size:32px;opacity:.5}
+#guide-video-testpattern{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  overflow:hidden;background:#000 url('/image/test-pattern.png') center/cover no-repeat;
+}
+#guide-video-testpattern .tp-label{
+  position:relative;z-index:2;padding:10px 14px;border-radius:6px;
+  background:rgba(6,10,15,.72);border:1px solid rgba(198,214,231,.32);
+  color:#d4e2f0;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;
+}
 #guide-video-spinner{
   position:absolute;inset:0;display:none;flex-direction:column;
   align-items:center;justify-content:center;gap:8px;background:#000a;
@@ -338,10 +409,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 /* Video controls (always visible bar at bottom of video panel) */
 #guide-video-controls{
   display:flex;align-items:center;gap:6px;padding:6px 10px;
-  background:#111;border-top:1px solid #222;flex-shrink:0;flex-wrap:wrap;
+  background:#111a26;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
 }
-.vctr{background:none;border:1px solid #333;border-radius:4px;
-  color:#ddd;cursor:pointer;padding:3px 9px;font-size:12px;
+.vctr{background:#152131;border:1px solid #2c425c;border-radius:4px;
+  color:#d6e3f2;cursor:pointer;padding:3px 9px;font-size:12px;
   transition:all .15s;white-space:nowrap}
 .vctr:hover{border-color:var(--accent);color:#fff}
 .vctr.active{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -378,14 +449,14 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   display:flex;align-items:stretch;
   height:var(--time-row);
   position:sticky;top:0;z-index:20;
-  background:var(--surface-el);
+  background:linear-gradient(180deg,#1e2a39 0%,#172231 100%);
   border-bottom:1px solid var(--border);
   min-width:max-content;
 }
 #guide-corner{
   width:var(--ch-col);min-width:var(--ch-col);
   position:sticky;left:0;z-index:21;
-  background:#1e1e28;
+  background:linear-gradient(180deg,#222f40 0%,#1b2737 100%);
   border-right:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
@@ -406,6 +477,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   display:flex;align-items:center;
   padding-left:4px;
   font-size:11px;color:var(--text-sec);font-weight:600;
+  font-family:var(--font-mono);
   white-space:nowrap;
 }
 .guide-time-tick::after{
@@ -416,7 +488,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 /* Subtle "now" tick in time header — just a thin accent mark at left edge */
 .guide-now-tick{
   position:absolute;top:0;bottom:0;width:1px;
-  background:rgba(99,102,241,0.35);z-index:5;pointer-events:none;
+  background:rgba(92,200,215,0.45);z-index:5;pointer-events:none;
 }
 
 /* Channel rows container */
@@ -428,9 +500,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   height:var(--ch-row);
   border-bottom:1px solid var(--divider);
   position:relative;
+  transition:background .2s;
 }
-.guide-ch-row:hover>.guide-ch-label{background:linear-gradient(to right,#1e1e2e 55%,transparent 100%)}
-.guide-ch-row.row-selected>.guide-ch-label{background:linear-gradient(to right,#1e1e35 55%,transparent 100%)}
+.guide-ch-row:hover>.guide-ch-label{background:linear-gradient(to right,#1c2a3a 55%,transparent 100%)}
+.guide-ch-row.row-selected>.guide-ch-label{background:linear-gradient(to right,#223349 55%,transparent 100%)}
 
 /* Sticky channel label */
 .guide-ch-label{
@@ -441,7 +514,8 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   padding:0 8px;cursor:default;flex-shrink:0;transition:background .15s;
 }
 .guide-label-num{
-  font-size:13px;font-weight:800;color:var(--accent);line-height:1.2;
+  font-size:13px;font-weight:700;color:var(--accent);line-height:1.2;
+  font-family:var(--font-mono);letter-spacing:.05em;
 }
 .guide-label-name{
   font-size:10px;color:var(--text-sec);
@@ -464,15 +538,22 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 
 /* Individual program block */
 .guide-prog-block{
-  position:absolute;top:3px;
-  height:calc(var(--ch-row) - 6px);
+  position:absolute;top:2px;
+  height:calc(var(--ch-row) - 4px);
   border-radius:4px;overflow:hidden;cursor:pointer;
-  box-sizing:border-box;border:1px solid transparent;
-  padding:4px 7px;display:flex;flex-direction:column;
-  justify-content:flex-start;transition:filter .15s,border-color .15s;
+  box-sizing:border-box;border:1px solid rgba(255,255,255,.09);
+  padding:3px 6px;display:flex;flex-direction:column;
+  justify-content:flex-start;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1), 0 2px 8px rgba(0,0,0,.3);
+  transition:transform .12s,filter .15s,border-color .15s;
 }
-.guide-prog-block:hover{filter:brightness(1.3)}
-.guide-prog-block.now-live{border-color:rgba(99,102,241,.6)!important}
+.guide-prog-block::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:30%;
+  background:linear-gradient(180deg,rgba(255,255,255,.13) 0%,transparent 100%);
+  pointer-events:none;
+}
+.guide-prog-block:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.guide-prog-block.now-live{border-color:rgba(92,200,215,.8)!important;box-shadow:inset 0 0 0 1px rgba(92,200,215,.2),0 0 14px rgba(92,200,215,.22)}
 .guide-prog-block.selected{
   border-color:#fff!important;filter:brightness(1.4);
   outline:1px solid rgba(255,255,255,.3);
@@ -494,10 +575,10 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 
 /* Logo slate (padded gap after content ends) */
 .guide-prog-slate{
-  position:absolute;top:3px;
-  height:calc(var(--ch-row) - 6px);
+  position:absolute;top:2px;
+  height:calc(var(--ch-row) - 4px);
   border-radius:4px;overflow:hidden;cursor:pointer;
-  background:#0a0a12;border:1px solid #1a1a24;
+  background:#111926;border:1px solid #223247;
   display:flex;align-items:center;justify-content:center;
 }
 .guide-prog-slate img{
@@ -505,6 +586,21 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 }
 .guide-prog-slate .slate-dash{
   font-size:16px;color:#2a2a35;
+}
+.guide-prog-empty{
+  position:absolute;top:2px;left:1px;
+  height:calc(var(--ch-row) - 4px);
+  border-radius:4px;overflow:hidden;cursor:pointer;
+  border:1px dashed rgba(173,192,214,.36);
+  background:linear-gradient(180deg,rgba(24,34,47,.68) 0%,rgba(14,22,33,.76) 100%);
+  display:flex;align-items:center;justify-content:center;
+  color:#9cb0c7;font-size:11px;font-family:var(--font-mono);letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.guide-prog-empty:hover{filter:brightness(1.08)}
+.guide-prog-empty.selected{
+  border-color:#fff;outline:1px solid rgba(255,255,255,.28);
+  box-shadow:0 0 12px rgba(255,255,255,.14);
 }
 
 /* Content-rating palette for program blocks */
@@ -541,6 +637,11 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
   --border:#2a2a2a;--divider:#1a1a1a;
 }
 
+/* Default motion/accessibility tuning */
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+
 /* Theme picker swatches */
 #theme-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .theme-swatch{
@@ -564,7 +665,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 <body>
 <div class="app">
   <header>
-    <h1><img src="/image/1.png" class="header-logo" alt=""> Nostalgia<span>vision</span></h1>
+    <h1><img src="/image/1.png" class="header-logo" alt="" onerror="this.style.display='none';this.style.marginRight='0'"> Nostalgia<span>vision</span></h1>
     <div id="tab-strip">
       <div class="tab active" id="tab-btn-guide"     onclick="switchTab('guide')">Guide</div>
       <div class="tab"        id="tab-btn-channels"  onclick="switchTab('channels')">Channels</div>
@@ -640,6 +741,9 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
             <div>Live preview appears here</div>
             <div style="font-size:11px;color:#666">Select a currently-airing program</div>
           </div>
+          <div id="guide-video-testpattern">
+            <div class="tp-label">No Programming Available</div>
+          </div>
           <div id="guide-video-spinner">
             <div class="ring"></div>
           </div>
@@ -655,6 +759,11 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
             <div id="fs-info">
               <div id="fs-info-title"></div>
               <div id="fs-info-ep"></div>
+            </div>
+            <div id="fs-mini-guide">
+              <div id="fs-mini-guide-title">Channel Surf</div>
+              <div id="fs-mini-guide-hint">Arrow keys browse, Enter tunes</div>
+              <div id="fs-mini-guide-list"></div>
             </div>
             <div id="fs-controls">
               <button class="fs-btn" id="fs-play" onclick="guideTogglePlay()">▶</button>
@@ -859,6 +968,15 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
           <input type="checkbox" id="toggle-osd" onchange="applyOSD(this.checked)">
           <label for="toggle-osd">Channel OSD on switch</label>
         </div>
+        <div class="form-group mt-16">
+          <label for="fs-surf-mode">Fullscreen Channel Surf Mode</label>
+          <select id="fs-surf-mode" onchange="setFsSurfMode(this.value)">
+            <option value="classic_osd">Classic: OSD Only (Instant Tune)</option>
+            <option value="classic_guide">Classic: Mini Guide (Instant Tune)</option>
+            <option value="guide_confirm">Guide + Confirm Tune</option>
+          </select>
+          <div class="text-sm text-sec mt-8">Controls fullscreen arrow-key tuning behavior.</div>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -983,6 +1101,20 @@ let _hlsKey         = null;        // rating_key of currently loaded HLS
 let _hlsProgStart   = 0;           // start_time of currently loaded program
 let _liveDebounce   = null;
 let _autoAdvanceTimer = null;      // auto-advance to next program when current ends
+let _nextPrefetchTimer = null;     // prefetch next program HLS shortly before handoff
+let _programClock = null;          // safety clock to avoid timer drift around boundaries
+let _advanceGuardKey = null;
+let _advanceGuardAt = 0;
+let _prefetchedHls = { ratingKey: null, hlsUrl: null, fetchedAt: 0 };
+
+const TRANSITION_GAP_THRESHOLD_MS = 30000;
+const NEXT_PREFETCH_LEAD_MS = 15000;
+const PROGRAM_CLOCK_MS = 500;
+const FS_SURF_CLASSIC_OSD = 'classic_osd';
+const FS_SURF_CLASSIC_GUIDE = 'classic_guide';
+const FS_SURF_CONFIRM = 'guide_confirm';
+const FS_SURF_KEY = 'nv-fs-surf-mode';
+const FS_SURF_DEFAULT = FS_SURF_CLASSIC_GUIDE;
 
 // Scroll tracking — suppress auto-scroll while user is browsing
 let _userScrolled   = false;   // true = user scrolled away from live
@@ -991,6 +1123,7 @@ let _autoScrolling  = false;   // true = we triggered the scroll, ignore the eve
 // Status poll
 let _statusPoll     = null;
 let _selectedLibraries = new Set();
+let _fsSurfMode = FS_SURF_DEFAULT;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Utilities
@@ -1193,15 +1326,22 @@ function renderGuideGrid() {
     const progArea = document.createElement('div');
     progArea.className = 'guide-ch-progs';
     progArea.style.width = `${totalPx}px`;
+    const chPrograms = ch.programs || [];
 
-    for (let pi = 0; pi < (ch.programs || []).length; pi++) {
-      const p = ch.programs[pi];
-      const slotMs   = p.end_time - p.start_time;
-      const leftPx   = Math.round((Math.max(p.start_time, gStart) - gStart) * PX_PER_MS);
-      const widthPx  = Math.round(slotMs * PX_PER_MS);
+    for (let pi = 0; pi < chPrograms.length; pi++) {
+      const p = chPrograms[pi];
+      const visStart = Math.max(p.start_time, gStart);
+      const visEnd   = Math.min(p.end_time, gEnd);
+      if (visEnd <= visStart) continue;
+
+      const slotMs   = visEnd - visStart;
+      const leftPx   = Math.round((visStart - gStart) * PX_PER_MS);
       const isNow    = p.start_time <= nowMs && p.end_time > nowMs;
-      const durMs    = p.duration_ms && p.duration_ms > 0 ? p.duration_ms : slotMs;
-      const contentMs = Math.min(durMs, slotMs);
+      const durMs    = p.duration_ms && p.duration_ms > 0 ? p.duration_ms : (p.end_time - p.start_time);
+      const contentEnd = Math.min(p.start_time + durMs, p.end_time);
+      const visibleContentStart = Math.max(visStart, p.start_time);
+      const visibleContentEnd   = Math.min(visEnd, contentEnd);
+      const contentMs = Math.max(0, visibleContentEnd - visibleContentStart);
       const slateMs   = slotMs - contentMs;
       const cPx = Math.round(contentMs * PX_PER_MS);
       const sPx = Math.round(slateMs * PX_PER_MS);
@@ -1210,10 +1350,12 @@ function renderGuideGrid() {
       const block = document.createElement('div');
       block.className = `guide-prog-block ${crClass(p.content_rating)}` +
         (isNow ? ' now-live' : '');
-      block.style.cssText = `left:${leftPx + 1}px;width:${Math.max(cPx - 2, 20)}px`;
+      block.style.cssText = `left:${leftPx + 1}px;width:${Math.max(cPx - 2, 2)}px`;
       // Store nav indices on the element
       block.dataset.chIdx   = ci;
       block.dataset.progIdx = pi;
+      block.dataset.startTime = p.start_time;
+      block.dataset.endTime = p.end_time;
 
       const titleEl = document.createElement('div');
       titleEl.className = 'prog-block-title';
@@ -1259,10 +1401,10 @@ function renderGuideGrid() {
       progArea.appendChild(block);
 
       // Logo slate (padded gap)
-      if (sPx > 4) {
+      if (sPx > 2) {
         const slate = document.createElement('div');
         slate.className = 'guide-prog-slate';
-        slate.style.cssText = `left:${leftPx + cPx + 1}px;width:${Math.max(sPx - 2, 4)}px`;
+        slate.style.cssText = `left:${leftPx + cPx + 1}px;width:${Math.max(sPx - 2, 2)}px`;
         if (ch.logo_url) {
           slate.innerHTML = `<img src="${ch.logo_url}" alt="">`;
         } else {
@@ -1277,6 +1419,20 @@ function renderGuideGrid() {
       }
     }
 
+    if (chPrograms.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'guide-prog-empty';
+      empty.style.width = `${Math.max(totalPx - 2, 20)}px`;
+      empty.dataset.chIdx = ci;
+      empty.textContent = 'No Programming Available';
+      empty.addEventListener('click', () => {
+        _navChIdx = ci;
+        _navProgIdx = 0;
+        selectNoProgramming(ch, empty);
+      });
+      progArea.appendChild(empty);
+    }
+
     row.appendChild(label);
     row.appendChild(progArea);
     rowsEl.appendChild(row);
@@ -1285,9 +1441,11 @@ function renderGuideGrid() {
   // Refresh aired overlays every 30 s
   clearInterval(_airedOverlayInterval);
   _airedOverlayInterval = setInterval(refreshAiredOverlays, 30000);
+  syncLiveBadges();
 }
 
 let _airedOverlayInterval = null;
+let _liveBadgeInterval = null;
 function refreshAiredOverlays() {
   const nowMs = Date.now();
   document.querySelectorAll('.prog-aired-overlay').forEach(el => {
@@ -1296,6 +1454,120 @@ function refreshAiredOverlays() {
     const airedMs = Math.max(0, nowMs - Math.max(progStart, gStart));
     el.style.width = `${Math.round(airedMs * PX_PER_MS)}px`;
   });
+}
+
+function syncLiveBadges() {
+  const nowMs = Date.now();
+  document.querySelectorAll('.guide-prog-block').forEach(block => {
+    const start = parseInt(block.dataset.startTime || '0', 10);
+    const end = parseInt(block.dataset.endTime || '0', 10);
+    const live = start <= nowMs && nowMs < end;
+    block.classList.toggle('now-live', live);
+    const existing = block.querySelector('.prog-live-badge');
+    if (live && !existing) {
+      const badge = document.createElement('div');
+      badge.className = 'prog-live-badge';
+      badge.textContent = '● LIVE';
+      block.appendChild(badge);
+    } else if (!live && existing) {
+      existing.remove();
+    }
+  });
+}
+
+function showNoProgrammingPreview() {
+  const ph = document.getElementById('guide-video-placeholder');
+  const tp = document.getElementById('guide-video-testpattern');
+  const poster = document.getElementById('guide-video-poster');
+  if (poster) {
+    poster.style.display = 'none';
+    poster.src = '';
+  }
+  if (ph) ph.style.display = 'none';
+  if (tp) tp.style.display = 'flex';
+}
+
+function hideNoProgrammingPreview() {
+  const tp = document.getElementById('guide-video-testpattern');
+  if (tp) tp.style.display = 'none';
+}
+
+function selectNoProgramming(ch, blockEl) {
+  _selectedProg = null;
+  _selectedCh = ch;
+  clearTimeout(_autoAdvanceTimer);
+  _clearNextPrefetch();
+  destroyHls();
+  showNoProgrammingPreview();
+
+  document.getElementById('guide-show-title').textContent = `${ch.name} — No Programming`;
+  document.getElementById('guide-ep-info').textContent = '';
+  document.getElementById('guide-time-ch').textContent = `Ch ${ch.number} ${ch.name}`;
+  document.getElementById('guide-badges').innerHTML = '';
+  document.getElementById('guide-summary').textContent =
+    'This channel currently has no matching media in your library.';
+  document.getElementById('btn-play-now').style.display = 'none';
+  document.getElementById('vctr-live').style.display = 'none';
+  const fsLive = document.getElementById('fs-live');
+  if (fsLive) fsLive.style.display = 'none';
+  const fsTitle = document.getElementById('fs-info-title');
+  const fsEp = document.getElementById('fs-info-ep');
+  if (fsTitle) fsTitle.textContent = `${ch.number} ${ch.name}`;
+  if (fsEp) fsEp.textContent = 'No Programming Available';
+
+  document.querySelectorAll('.guide-ch-row.row-selected').forEach(r => r.classList.remove('row-selected'));
+  document.querySelectorAll('.guide-prog-block.selected,.guide-prog-empty.selected')
+    .forEach(b => b.classList.remove('selected'));
+  if (blockEl) {
+    blockEl.classList.add('selected');
+    const row = blockEl.closest('.guide-ch-row');
+    if (row) row.classList.add('row-selected');
+  }
+}
+
+function _findProgramPosition(prog, ch) {
+  if (!_guideData || !prog || !ch) return null;
+  const channels = _guideData.channels || [];
+  const chIdx = channels.findIndex(c => c.number === ch.number);
+  if (chIdx < 0) return null;
+  const progs = channels[chIdx].programs || [];
+  const progIdx = progs.findIndex(
+    p => p.start_time === prog.start_time && p.end_time === prog.end_time
+  );
+  if (progIdx < 0) return null;
+  return { channels, chIdx, progs, progIdx };
+}
+
+function _clearNextPrefetch() {
+  clearTimeout(_nextPrefetchTimer);
+  _nextPrefetchTimer = null;
+}
+
+function _prefetchHlsForProgram(nextProg) {
+  if (!nextProg || !nextProg.rating_key) return;
+  if (_prefetchedHls.ratingKey === nextProg.rating_key && _prefetchedHls.hlsUrl) return;
+  fetch(`/api/hls_url/${nextProg.rating_key}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.hls_url) return;
+      _prefetchedHls = {
+        ratingKey: nextProg.rating_key,
+        hlsUrl: data.hls_url,
+        fetchedAt: Date.now(),
+      };
+    })
+    .catch(() => {});
+}
+
+function _queueNextPrefetch(prog, ch) {
+  _clearNextPrefetch();
+  const pos = _findProgramPosition(prog, ch);
+  if (!pos || pos.progIdx + 1 >= pos.progs.length) return;
+  const nextProg = pos.progs[pos.progIdx + 1];
+  const scheduledGapMs = nextProg.start_time - prog.end_time;
+  if (scheduledGapMs > TRANSITION_GAP_THRESHOLD_MS) return;
+  const msUntilPrefetch = Math.max(0, prog.end_time - Date.now() - NEXT_PREFETCH_LEAD_MS);
+  _nextPrefetchTimer = setTimeout(() => _prefetchHlsForProgram(nextProg), msUntilPrefetch);
 }
 
 function showBRB(ch, nextProg, chIdx, progIdx) {
@@ -1323,15 +1595,22 @@ function showBRB(ch, nextProg, chIdx, progIdx) {
 }
 
 function _doAdvance(prog, ch) {
+  if (!prog || !ch) return;
+  const guardKey = `${ch.number}:${prog.start_time}`;
+  const nowMs = Date.now();
+  if (_advanceGuardKey === guardKey && (nowMs - _advanceGuardAt) < 1500) return;
+  _advanceGuardKey = guardKey;
+  _advanceGuardAt = nowMs;
+
   clearTimeout(_autoAdvanceTimer);
+  _clearNextPrefetch();
   if (!_guideData) { destroyHls(); return; }
-  const channels = _guideData.channels;
-  const chIdx = channels.findIndex(c => c.number === ch.number);
-  if (chIdx < 0) { destroyHls(); loadGuide(); return; }
-  const progs = channels[chIdx].programs || [];
-  const progIdx = progs.findIndex(p => p.start_time === prog.start_time);
+  const pos = _findProgramPosition(prog, ch);
+  if (!pos) { destroyHls(); loadGuide(); return; }
+  const { channels, chIdx, progs, progIdx } = pos;
   if (progIdx >= 0 && progIdx + 1 < progs.length) {
     const next = progs[progIdx + 1];
+    _prefetchHlsForProgram(next);
     _navChIdx   = chIdx;
     _navProgIdx = progIdx + 1;
     const block = document.querySelector(
@@ -1341,12 +1620,11 @@ function _doAdvance(prog, ch) {
     // programs, not Date.now(). Back-to-back programs have a gap of ~0 ms
     // and should never trigger BRB; only genuine schedule gaps (> 30 s) do.
     const scheduledGapMs = next.start_time - prog.end_time;
-    if (scheduledGapMs > 30000) {
+    if (scheduledGapMs > TRANSITION_GAP_THRESHOLD_MS) {
       showBRB(channels[chIdx], next, chIdx, progIdx + 1);
     } else {
       // Back-to-back: play next at its scheduled start (or immediately if past)
       const msUntilNext = Math.max(0, next.start_time - Date.now());
-      destroyHls();
       if (msUntilNext === 0) {
         selectProgram(next, channels[chIdx], block);
       } else {
@@ -1365,6 +1643,7 @@ function _doAdvance(prog, ch) {
 
 function scheduleAutoAdvance(prog, ch) {
   clearTimeout(_autoAdvanceTimer);
+  _queueNextPrefetch(prog, ch);
   const msUntilEnd = prog.end_time - Date.now();
   if (msUntilEnd <= 0) { _doAdvance(prog, ch); return; }
   _autoAdvanceTimer = setTimeout(() => _doAdvance(prog, ch), msUntilEnd);
@@ -1443,12 +1722,20 @@ function autoSelectFirstLive() {
       }
     }
   }
+  const ch0 = _guideData.channels[0];
+  if (ch0) {
+    _navChIdx = 0;
+    _navProgIdx = 0;
+    const empty = document.querySelector(`.guide-prog-empty[data-ch-idx="0"]`);
+    if (empty) selectNoProgramming(ch0, empty);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Program selection + info panel
 // ══════════════════════════════════════════════════════════════════════════════
 function selectProgram(p, ch, blockEl) {
+  hideNoProgrammingPreview();
   _selectedProg = p;
   _selectedCh   = ch;
   const nowMs  = Date.now();
@@ -1495,7 +1782,8 @@ function selectProgram(p, ch, blockEl) {
 
   // Highlight row + block
   document.querySelectorAll('.guide-ch-row.row-selected').forEach(r => r.classList.remove('row-selected'));
-  document.querySelectorAll('.guide-prog-block.selected').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.guide-prog-block.selected,.guide-prog-empty.selected')
+    .forEach(b => b.classList.remove('selected'));
   if (blockEl) {
     blockEl.classList.add('selected');
     const row = blockEl.closest('.guide-ch-row');
@@ -1514,6 +1802,7 @@ function selectProgram(p, ch, blockEl) {
     poster.src = '';
   } else {
     clearTimeout(_autoAdvanceTimer);
+    _clearNextPrefetch();
     destroyHls();
     // Show thumbnail in video panel for non-live shows
     const poster = document.getElementById('guide-video-poster');
@@ -1544,8 +1833,18 @@ function loadLivePreview(ratingKey, startTimeMs) {
   ph.style.display      = 'none';
   spinner.style.display = 'flex';
 
-  fetch(`/api/hls_url/${ratingKey}`)
-    .then(r => r.json())
+  const prefetched = (_prefetchedHls.ratingKey === ratingKey && _prefetchedHls.hlsUrl)
+    ? _prefetchedHls.hlsUrl
+    : null;
+  if (prefetched) {
+    _prefetchedHls = { ratingKey: null, hlsUrl: null, fetchedAt: 0 };
+  }
+
+  const hlsMeta = prefetched
+    ? Promise.resolve({ hls_url: prefetched })
+    : fetch(`/api/hls_url/${ratingKey}`).then(r => r.json());
+
+  hlsMeta
     .then(data => {
       if (!data.hls_url || _hlsKey !== ratingKey) return;  // stale
       spinner.style.display = 'none';
@@ -1618,6 +1917,7 @@ function destroyHls() {
     _hlsInstance = null;
   }
   _hlsKey = null;
+  hideNoProgrammingPreview();
   const video = document.getElementById('guide-video');
   video.pause();
   video.removeAttribute('src');
@@ -1631,6 +1931,21 @@ function destroyHls() {
   const brb = document.getElementById('guide-video-brb');
   if (brb) brb.style.display = 'none';
   updateVideoCtrlState();
+}
+
+function startProgramClock() {
+  if (_programClock) return;
+  _programClock = setInterval(() => {
+    if (!_selectedProg || !_selectedCh) return;
+    if (Date.now() >= _selectedProg.end_time) {
+      _doAdvance(_selectedProg, _selectedCh);
+    }
+  }, PROGRAM_CLOCK_MS);
+}
+
+function startLiveBadgeClock() {
+  if (_liveBadgeInterval) return;
+  _liveBadgeInterval = setInterval(syncLiveBadges, 1000);
 }
 
 // ── Video controls
@@ -1699,6 +2014,29 @@ _gvideo.addEventListener('pause', updateVideoCtrlState);
 
 // ── Fullscreen overlay controls
 let _fsIdleTimer = null;
+let _fsGuideTimer = null;
+let _fsPendingChIdx = null;
+let _fsPendingProgIdx = null;
+
+function isFsConfirmMode() {
+  return _fsSurfMode === FS_SURF_CONFIRM;
+}
+
+function isFsGuideMode() {
+  return _fsSurfMode === FS_SURF_CLASSIC_GUIDE || _fsSurfMode === FS_SURF_CONFIRM;
+}
+
+function isFsOsdOnlyMode() {
+  return _fsSurfMode === FS_SURF_CLASSIC_OSD;
+}
+
+function _updateFsMiniGuideHint() {
+  const hint = document.getElementById('fs-mini-guide-hint');
+  if (!hint) return;
+  hint.textContent = isFsConfirmMode()
+    ? 'Arrow keys browse, Enter tunes'
+    : 'Arrow keys flip channels';
+}
 
 function _showFsControls() {
   const overlay = document.getElementById('fs-overlay');
@@ -1713,16 +2051,136 @@ function _showFsControls() {
   }, 3000);
 }
 
+function _findLiveProgIdx(ch) {
+  if (!ch || !ch.programs || !ch.programs.length) return 0;
+  const nowMs = Date.now();
+  for (let i = 0; i < ch.programs.length; i++) {
+    const p = ch.programs[i];
+    if (p.start_time <= nowMs && nowMs < p.end_time) return i;
+  }
+  return 0;
+}
+
+function _initFsPendingSelection() {
+  if (!isFsConfirmMode()) {
+    _fsPendingChIdx = null;
+    _fsPendingProgIdx = null;
+    return;
+  }
+  if (!_guideData || !_guideData.channels || !_guideData.channels.length) return;
+  const maxCh = _guideData.channels.length - 1;
+  const baseCh = Math.max(0, Math.min(_navChIdx, maxCh));
+  _fsPendingChIdx = baseCh;
+  const ch = _guideData.channels[baseCh];
+  const maxProg = Math.max(0, (ch.programs || []).length - 1);
+  _fsPendingProgIdx = Math.max(0, Math.min(_navProgIdx, maxProg));
+  if (!ch.programs || !ch.programs.length) _fsPendingProgIdx = 0;
+}
+
+function _fsProgramLabel(ch, progIdx) {
+  if (!ch || !ch.programs || !ch.programs.length) return 'No programming';
+  const idx = Math.max(0, Math.min(progIdx ?? 0, ch.programs.length - 1));
+  const p = ch.programs[idx];
+  if (!p) return 'No programming';
+  const base = p.show_title || p.title || 'Unknown';
+  const when = `${fmt(p.start_time)}-${fmt(p.end_time)}`;
+  if (p.type === 'episode' && p.episode_title) return `${when} ${base} - ${p.episode_title}`;
+  return `${when} ${base}`;
+}
+
+function _setFsPendingChannel(nextChIdx) {
+  if (!isFsConfirmMode()) return;
+  if (!_guideData || !_guideData.channels || !_guideData.channels.length) return;
+  const maxCh = _guideData.channels.length - 1;
+  _fsPendingChIdx = Math.max(0, Math.min(nextChIdx, maxCh));
+  const ch = _guideData.channels[_fsPendingChIdx];
+  _fsPendingProgIdx = _findLiveProgIdx(ch);
+}
+
+function _setFsPendingProgram(nextProgIdx) {
+  if (!isFsConfirmMode()) return;
+  if (!_guideData || _fsPendingChIdx === null) return;
+  const ch = _guideData.channels[_fsPendingChIdx];
+  if (!ch || !ch.programs || !ch.programs.length) {
+    _fsPendingProgIdx = 0;
+    return;
+  }
+  const maxProg = ch.programs.length - 1;
+  _fsPendingProgIdx = Math.max(0, Math.min(nextProgIdx, maxProg));
+}
+
+function commitFsPendingTune() {
+  if (!document.fullscreenElement || _fsPendingChIdx === null || _fsPendingProgIdx === null) return;
+  _navChIdx = _fsPendingChIdx;
+  _navProgIdx = _fsPendingProgIdx;
+  navSelectByIndex();
+  _showFsControls();
+  showFsMiniGuide();
+}
+
+function renderFsMiniGuide() {
+  const list = document.getElementById('fs-mini-guide-list');
+  if (!list || !_guideData || !_guideData.channels || !_guideData.channels.length) {
+    if (list) list.innerHTML = '';
+    return;
+  }
+  const channels = _guideData.channels;
+  const centerRaw = (_fsPendingChIdx !== null) ? _fsPendingChIdx : _navChIdx;
+  const center = Math.max(0, Math.min(centerRaw, channels.length - 1));
+  const start = Math.max(0, center - 2);
+  const end = Math.min(channels.length - 1, center + 2);
+  const playingNumber = _selectedCh ? _selectedCh.number : null;
+  const rows = [];
+  for (let i = start; i <= end; i++) {
+    const ch = channels[i];
+    const rowProgIdx = (i === center && _fsPendingProgIdx !== null)
+      ? _fsPendingProgIdx
+      : _findLiveProgIdx(ch);
+    const rowClass = [
+      'fs-mini-row',
+      i === center ? 'current' : '',
+      (playingNumber !== null && ch.number === playingNumber) ? 'playing' : '',
+    ].filter(Boolean).join(' ');
+    rows.push(
+      `<div class="${rowClass}">` +
+        `<div class="fs-mini-num">${ch.number}</div>` +
+        `<div class="fs-mini-name">${escHtml(ch.name || '')}</div>` +
+        `<div class="fs-mini-prog">${escHtml(_fsProgramLabel(ch, rowProgIdx))}</div>` +
+      `</div>`
+    );
+  }
+  list.innerHTML = rows.join('');
+}
+
+function showFsMiniGuide() {
+  if (!isFsGuideMode()) return;
+  if (!document.fullscreenElement) return;
+  const panel = document.getElementById('fs-mini-guide');
+  if (!panel) return;
+  _updateFsMiniGuideHint();
+  renderFsMiniGuide();
+  panel.classList.add('visible');
+  clearTimeout(_fsGuideTimer);
+  _fsGuideTimer = setTimeout(() => panel.classList.remove('visible'), 2600);
+}
+
 document.addEventListener('fullscreenchange', () => {
   const isFs   = !!document.fullscreenElement;
   const overlay = document.getElementById('fs-overlay');
   const wrap    = document.getElementById('guide-video-wrap');
+  const panel = document.getElementById('fs-mini-guide');
   if (isFs) {
+    _initFsPendingSelection();
     _showFsControls();
+    if (isFsGuideMode()) showFsMiniGuide();
   } else {
     overlay.classList.remove('fs-visible');
     wrap.classList.remove('fs-idle');
+    if (panel) panel.classList.remove('visible');
     clearTimeout(_fsIdleTimer);
+    clearTimeout(_fsGuideTimer);
+    _fsPendingChIdx = null;
+    _fsPendingProgIdx = null;
   }
 });
 
@@ -1820,26 +2278,84 @@ document.addEventListener('keydown', e => {
   // Don't intercept if focus is in an input
   if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
 
+  const inFs = !!document.fullscreenElement;
   const channels = _guideData.channels;
+  if (inFs && isFsConfirmMode() && e.key === 'Enter') {
+    e.preventDefault();
+    commitFsPendingTune();
+    return;
+  }
+
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    _navChIdx = Math.min(_navChIdx + 1, channels.length - 1);
-    navSelectCurrentPosition();
+    if (inFs) {
+      if (isFsConfirmMode()) {
+        if (_fsPendingChIdx === null) _initFsPendingSelection();
+        _setFsPendingChannel((_fsPendingChIdx ?? _navChIdx) + 1);
+      } else {
+        _navChIdx = Math.min(_navChIdx + 1, channels.length - 1);
+        navSelectCurrentPosition();
+      }
+      _showFsControls();
+      if (isFsGuideMode()) showFsMiniGuide();
+    } else {
+      _navChIdx = Math.min(_navChIdx + 1, channels.length - 1);
+      navSelectCurrentPosition();
+    }
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
-    _navChIdx = Math.max(_navChIdx - 1, 0);
-    navSelectCurrentPosition();
+    if (inFs) {
+      if (isFsConfirmMode()) {
+        if (_fsPendingChIdx === null) _initFsPendingSelection();
+        _setFsPendingChannel((_fsPendingChIdx ?? _navChIdx) - 1);
+      } else {
+        _navChIdx = Math.max(_navChIdx - 1, 0);
+        navSelectCurrentPosition();
+      }
+      _showFsControls();
+      if (isFsGuideMode()) showFsMiniGuide();
+    } else {
+      _navChIdx = Math.max(_navChIdx - 1, 0);
+      navSelectCurrentPosition();
+    }
   } else if (e.key === 'ArrowRight') {
     e.preventDefault();
-    const ch = channels[_navChIdx];
-    if (ch) {
-      _navProgIdx = Math.min(_navProgIdx + 1, (ch.programs || []).length - 1);
-      navSelectByIndex();
+    if (inFs) {
+      if (isFsConfirmMode()) {
+        if (_fsPendingChIdx === null) _initFsPendingSelection();
+        _setFsPendingProgram((_fsPendingProgIdx ?? _navProgIdx) + 1);
+      } else {
+        const ch = channels[_navChIdx];
+        if (ch) {
+          _navProgIdx = Math.min(_navProgIdx + 1, (ch.programs || []).length - 1);
+          navSelectByIndex();
+        }
+      }
+      _showFsControls();
+      if (isFsGuideMode()) showFsMiniGuide();
+    } else {
+      const ch = channels[_navChIdx];
+      if (ch) {
+        _navProgIdx = Math.min(_navProgIdx + 1, (ch.programs || []).length - 1);
+        navSelectByIndex();
+      }
     }
   } else if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    _navProgIdx = Math.max(_navProgIdx - 1, 0);
-    navSelectByIndex();
+    if (inFs) {
+      if (isFsConfirmMode()) {
+        if (_fsPendingChIdx === null) _initFsPendingSelection();
+        _setFsPendingProgram((_fsPendingProgIdx ?? _navProgIdx) - 1);
+      } else {
+        _navProgIdx = Math.max(_navProgIdx - 1, 0);
+        navSelectByIndex();
+      }
+      _showFsControls();
+      if (isFsGuideMode()) showFsMiniGuide();
+    } else {
+      _navProgIdx = Math.max(_navProgIdx - 1, 0);
+      navSelectByIndex();
+    }
   }
 });
 
@@ -1848,6 +2364,12 @@ function navSelectByIndex() {
   if (!channels) return;
   const ch = channels[_navChIdx];
   if (!ch) return;
+  if (!ch.programs || !ch.programs.length) {
+    const empty = document.querySelector(`.guide-prog-empty[data-ch-idx="${_navChIdx}"]`);
+    selectNoProgramming(ch, empty);
+    return;
+  }
+  if (_navProgIdx < 0) _navProgIdx = 0;
   const p = (ch.programs || [])[_navProgIdx];
   if (!p) return;
   const block = document.querySelector(
@@ -1863,7 +2385,14 @@ function navSelectCurrentPosition() {
   const channels = _guideData && _guideData.channels;
   if (!channels) return;
   const ch = channels[_navChIdx];
-  if (!ch || !ch.programs || !ch.programs.length) return;
+  if (!ch) return;
+  if (!ch.programs || !ch.programs.length) {
+    _navProgIdx = 0;
+    navSelectByIndex();
+    const row = document.querySelector(`.guide-ch-row[data-ch-idx="${_navChIdx}"]`);
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
   const nowMs = Date.now();
   // Try to find a program near the currently viewed time
   let bestIdx = 0;
@@ -2264,6 +2793,34 @@ function applyOSD(enabled) {
   if (cb) cb.checked = enabled;
 }
 
+function setFsSurfMode(mode) {
+  const valid = [FS_SURF_CLASSIC_OSD, FS_SURF_CLASSIC_GUIDE, FS_SURF_CONFIRM];
+  _fsSurfMode = valid.includes(mode) ? mode : FS_SURF_DEFAULT;
+  localStorage.setItem(FS_SURF_KEY, _fsSurfMode);
+
+  const sel = document.getElementById('fs-surf-mode');
+  if (sel) sel.value = _fsSurfMode;
+
+  if (!isFsConfirmMode()) {
+    _fsPendingChIdx = null;
+    _fsPendingProgIdx = null;
+  } else {
+    _initFsPendingSelection();
+  }
+  _updateFsMiniGuideHint();
+
+  if (document.fullscreenElement) {
+    const panel = document.getElementById('fs-mini-guide');
+    if (panel && isFsOsdOnlyMode()) panel.classList.remove('visible');
+    if (isFsGuideMode()) showFsMiniGuide();
+  }
+}
+
+function loadFsSurfMode() {
+  const saved = localStorage.getItem(FS_SURF_KEY) || FS_SURF_DEFAULT;
+  setFsSurfMode(saved);
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // CRT Scanlines
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2320,6 +2877,9 @@ document.getElementById('guide-scroll-wrap').addEventListener('scroll', () => {
 
 applyScanlines(localStorage.getItem('nv-scanlines') === 'true');
 applyOSD(localStorage.getItem('nv-osd') !== 'false');
+loadFsSurfMode();
+startProgramClock();
+startLiveBadgeClock();
 loadGuide();
 loadGuideClients();
 </script>

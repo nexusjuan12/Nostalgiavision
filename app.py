@@ -26,7 +26,7 @@ import threading
 import time
 from dataclasses import asdict
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 import database as db
 from channels import (PREDEFINED_CHANNELS, PREDEFINED_BY_NUMBER,
@@ -132,6 +132,13 @@ def _all_channel_configs() -> list:
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/image/<path:filename>")
+def serve_image_asset(filename: str):
+    """Serve UI image assets from the local ./image directory."""
+    image_dir = os.path.join(os.path.dirname(__file__), "image")
+    return send_from_directory(image_dir, filename)
 
 
 @app.route("/api/status")
