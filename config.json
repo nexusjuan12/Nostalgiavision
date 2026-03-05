@@ -1,7 +1,8 @@
 {
-  "plex_url": "xxxxxx",
-  "plex_token": "xxxxxxxx",
+  "plex_url": "http://208.73.202.6:32400",
+  "plex_token": "w5MgpjxsLmupXz-V1GnQ",
   "library_ids": [
+    "2",
     "1"
   ],
   "schedule_days_ahead": 3,
