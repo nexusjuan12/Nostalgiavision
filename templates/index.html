@@ -228,6 +228,34 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 .tag .remove:hover{opacity:1}
 .tag-input input{border:none;background:transparent;color:var(--text);
   font-size:13px;outline:none;min-width:80px;flex:1}
+.specific-picker{
+  border:1px solid var(--border);border-radius:6px;padding:8px;
+  background:var(--surface-el);
+}
+.specific-search{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;
+  color:var(--text);padding:7px 9px;font-size:12px;outline:none;
+}
+.specific-search:focus{border-color:var(--accent)}
+.specific-results{
+  margin-top:6px;max-height:120px;overflow:auto;border:1px solid var(--border);
+  border-radius:5px;background:var(--bg);
+}
+.specific-result{
+  padding:7px 9px;cursor:pointer;border-bottom:1px solid var(--divider);font-size:12px;
+  display:flex;justify-content:space-between;gap:8px;align-items:center;
+}
+.specific-result:last-child{border-bottom:none}
+.specific-result:hover{background:#21304466}
+.specific-chip-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.specific-chip{
+  display:inline-flex;align-items:center;gap:6px;border-radius:12px;
+  padding:3px 8px;font-size:11px;border:1px solid var(--border);
+}
+.specific-chip.include{background:#14532d44;color:#7ee2a8}
+.specific-chip.exclude{background:#7f1d1d44;color:#ffb3b3}
+.specific-chip .remove{cursor:pointer;opacity:.8}
+.specific-chip .remove:hover{opacity:1}
 
 /* ── Info grid ─── */
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
@@ -876,6 +904,26 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
           <input type="hidden" id="b-keywords" value="[]">
         </div>
         <div class="form-group">
+          <label>Always Include Specific Titles (shows or movies)</label>
+          <div class="specific-picker">
+            <input class="specific-search" id="b-include-search" type="text"
+              placeholder="Search shows/movies to include..."
+              oninput="searchSpecificContent('builder','include',this.value)">
+            <div class="specific-results" id="b-include-results"></div>
+            <div class="specific-chip-wrap" id="b-include-selected"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Always Exclude Specific Titles</label>
+          <div class="specific-picker">
+            <input class="specific-search" id="b-exclude-search" type="text"
+              placeholder="Search shows/movies to exclude..."
+              oninput="searchSpecificContent('builder','exclude',this.value)">
+            <div class="specific-results" id="b-exclude-results"></div>
+            <div class="specific-chip-wrap" id="b-exclude-selected"></div>
+          </div>
+        </div>
+        <div class="form-group">
           <label>Max Year (leave blank for no limit)</label>
           <input type="number" id="b-max-year" placeholder="e.g. 1999">
         </div>
@@ -1057,6 +1105,26 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
       </div>
     </div>
     <div class="form-group">
+      <label>Always Include Specific Titles</label>
+      <div class="specific-picker">
+        <input class="specific-search" id="ch-edit-include-search" type="text"
+          placeholder="Search shows/movies to include..."
+          oninput="searchSpecificContent('edit','include',this.value)">
+        <div class="specific-results" id="ch-edit-include-results"></div>
+        <div class="specific-chip-wrap" id="ch-edit-include-selected"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Always Exclude Specific Titles</label>
+      <div class="specific-picker">
+        <input class="specific-search" id="ch-edit-exclude-search" type="text"
+          placeholder="Search shows/movies to exclude..."
+          oninput="searchSpecificContent('edit','exclude',this.value)">
+        <div class="specific-results" id="ch-edit-exclude-results"></div>
+        <div class="specific-chip-wrap" id="ch-edit-exclude-selected"></div>
+      </div>
+    </div>
+    <div class="form-group">
       <label>Max Year (leave blank for no limit)</label>
       <input type="number" id="ch-edit-max-year" placeholder="e.g. 1999">
     </div>
@@ -1069,9 +1137,12 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
         <option value="BLOCK_CYCLIC">Block Cyclic (themed blocks, ordered)</option>
       </select>
     </div>
+    <div class="text-sm text-sec" id="ch-edit-preview"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveChannelEdit()">Save Changes</button>
+      <button class="btn btn-secondary" onclick="previewEditChannel()">Preview Matches</button>
+      <button class="btn btn-primary" onclick="saveChannelEdit(false)">Save Changes</button>
+      <button class="btn btn-primary" onclick="saveChannelEdit(true)">Save + Rebuild</button>
     </div>
   </div>
 </div>
@@ -1178,6 +1249,7 @@ function switchTab(id) {
   });
   if (id === 'guide')    loadGuide();
   if (id === 'channels') loadChannelList();
+  if (id === 'builder')  ensureContentCatalog();
   if (id === 'settings') loadSettings();
 }
 
@@ -2481,6 +2553,127 @@ async function restoreChannel(n) {
 
 // ── Edit channel modal
 const _editTags = { genres: [], studios: [], keywords: [] };
+const _specificState = {
+  builder: { include: [], exclude: [] },
+  edit: { include: [], exclude: [] },
+};
+let _contentCatalog = [];
+let _contentCatalogLoaded = false;
+
+function _specificPrefix(scope) {
+  return scope === 'builder' ? 'b' : 'ch-edit';
+}
+
+function _specificContainerId(scope, bucket, kind) {
+  const p = _specificPrefix(scope);
+  return `${p}-${bucket}-${kind}`;
+}
+
+function _specificKeys(scope, bucket) {
+  return (_specificState[scope][bucket] || []).map(i => i.rating_key);
+}
+
+async function ensureContentCatalog(force = false) {
+  if (_contentCatalogLoaded && !force) return;
+  try {
+    const r = await fetch('/api/content/search?types=show,movie&limit=1000');
+    const d = await r.json();
+    _contentCatalog = (d.items || []).slice();
+    _contentCatalogLoaded = true;
+  } catch (e) {
+    _contentCatalog = [];
+  }
+}
+
+function _catalogByKey(ratingKey) {
+  return _contentCatalog.find(i => i.rating_key === ratingKey) || null;
+}
+
+function setSpecificKeys(scope, bucket, keys) {
+  const uniq = [];
+  const seen = new Set();
+  (keys || []).forEach(k => {
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    uniq.push(k);
+  });
+  _specificState[scope][bucket] = uniq.map(k => {
+    const found = _catalogByKey(k);
+    return found || { rating_key: k, title: `Unknown (${k})`, type: 'item' };
+  });
+  renderSpecificSelected(scope, bucket);
+}
+
+function addSpecificItem(scope, bucket, item) {
+  if (!item || !item.rating_key) return;
+  const has = _specificState[scope][bucket].some(i => i.rating_key === item.rating_key);
+  if (has) return;
+  _specificState[scope][bucket].push(item);
+  renderSpecificSelected(scope, bucket);
+}
+
+function removeSpecificItem(scope, bucket, ratingKey) {
+  _specificState[scope][bucket] = _specificState[scope][bucket]
+    .filter(i => i.rating_key !== ratingKey);
+  renderSpecificSelected(scope, bucket);
+}
+
+function renderSpecificSelected(scope, bucket) {
+  const el = document.getElementById(_specificContainerId(scope, bucket, 'selected'));
+  if (!el) return;
+  const cls = bucket === 'include' ? 'include' : 'exclude';
+  el.innerHTML = '';
+  for (const i of (_specificState[scope][bucket] || [])) {
+    const chip = document.createElement('span');
+    chip.className = `specific-chip ${cls}`;
+    const txt = document.createElement('span');
+    txt.textContent = `${i.title} (${i.type || 'item'})`;
+    const rm = document.createElement('span');
+    rm.className = 'remove';
+    rm.textContent = '✕';
+    rm.onclick = () => removeSpecificItem(scope, bucket, i.rating_key);
+    chip.appendChild(txt);
+    chip.appendChild(rm);
+    el.appendChild(chip);
+  }
+}
+
+function renderSpecificResults(scope, bucket, query) {
+  const el = document.getElementById(_specificContainerId(scope, bucket, 'results'));
+  if (!el) return;
+  const q = (query || '').trim().toLowerCase();
+  if (!q) {
+    el.innerHTML = '';
+    return;
+  }
+  const selected = new Set(_specificKeys(scope, bucket));
+  const matches = _contentCatalog
+    .filter(i => !selected.has(i.rating_key))
+    .filter(i => (i.title || '').toLowerCase().includes(q))
+    .slice(0, 15);
+  if (matches.length === 0) {
+    el.innerHTML = `<div class="specific-result"><span>No matches</span></div>`;
+    return;
+  }
+  el.innerHTML = '';
+  for (const m of matches) {
+    const row = document.createElement('div');
+    row.className = 'specific-result';
+    row.innerHTML = `<span>${escHtml(m.title)}</span><span class="text-sec text-sm">${escHtml(m.type || '')}</span>`;
+    row.onclick = () => {
+      addSpecificItem(scope, bucket, m);
+      const search = document.getElementById(_specificContainerId(scope, bucket, 'search'));
+      if (search) search.value = '';
+      el.innerHTML = '';
+    };
+    el.appendChild(row);
+  }
+}
+
+async function searchSpecificContent(scope, bucket, query) {
+  await ensureContentCatalog();
+  renderSpecificResults(scope, bucket, query);
+}
 
 function closeEditModal() {
   document.getElementById('ch-edit-modal').classList.remove('open');
@@ -2490,6 +2683,7 @@ document.getElementById('ch-edit-modal').addEventListener('click', e => {
 });
 
 async function editChannel(num) {
+  await ensureContentCatalog();
   const r = await fetch('/api/channels');
   const d = await r.json();
   const ch = (d.channels || []).find(c => c.number === num);
@@ -2503,9 +2697,19 @@ async function editChannel(num) {
   _editTags.genres   = (ch.genres   || []).slice();
   _editTags.studios  = (ch.studios  || []).slice();
   _editTags.keywords = (ch.keywords || []).slice();
+  setSpecificKeys('edit', 'include', ch.custom_media_rating_keys || []);
+  setSpecificKeys('edit', 'exclude', ch.excluded_rating_keys || []);
+  const includeSearch = document.getElementById('ch-edit-include-search');
+  const excludeSearch = document.getElementById('ch-edit-exclude-search');
+  if (includeSearch) includeSearch.value = '';
+  if (excludeSearch) excludeSearch.value = '';
+  renderSpecificResults('edit', 'include', '');
+  renderSpecificResults('edit', 'exclude', '');
   renderEditTags('genres');
   renderEditTags('studios');
   renderEditTags('keywords');
+  const previewEl = document.getElementById('ch-edit-preview');
+  if (previewEl) previewEl.textContent = '';
   alert$(document.getElementById('ch-edit-alert'), '', '');
   document.getElementById('ch-edit-modal').classList.add('open');
 }
@@ -2539,31 +2743,89 @@ function renderEditTags(field) {
   container.appendChild(inp);
 }
 
-async function saveChannelEdit() {
+function buildEditChannelPayload() {
   const num  = parseInt(document.getElementById('ch-edit-number').value);
   const name = document.getElementById('ch-edit-name').value.trim();
   if (!name) {
     alert$(document.getElementById('ch-edit-alert'), 'Channel name is required.', 'error');
-    return;
+    return null;
   }
-  const payload = {
+  return {
+    number: num,
     name,
     type:           document.getElementById('ch-edit-type').value,
     genres:         _editTags.genres.slice(),
     studios:        _editTags.studios.slice(),
     keywords:       _editTags.keywords.slice(),
+    custom_media_rating_keys: _specificKeys('edit', 'include'),
+    excluded_rating_keys: _specificKeys('edit', 'exclude'),
     max_year:       document.getElementById('ch-edit-max-year').value
                       ? parseInt(document.getElementById('ch-edit-max-year').value) : null,
     sorting_method: document.getElementById('ch-edit-sorting').value,
   };
+}
+
+async function previewEditChannel() {
+  const payload = buildEditChannelPayload();
+  if (!payload) return;
+  const r = await fetch('/api/channels/preview-config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const d = await r.json();
+  const el = document.getElementById('ch-edit-preview');
+  if (!el) return;
+  if (d.error) {
+    el.textContent = d.error;
+    return;
+  }
+  const lines = [`Matching content: ${d.matching_count ?? '?'} items`];
+  if (d.preview_titles && d.preview_titles.length) {
+    lines.push(`Sample: ${d.preview_titles.slice(0, 5).join(' | ')}`);
+  }
+  el.textContent = lines.join('  ');
+}
+
+async function rebuildChannels(channelNumbers) {
+  const daysEl = document.getElementById('s-days');
+  const days   = parseInt(daysEl ? daysEl.value : 3);
+  await fetch('/api/schedule/build', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ days, channels: channelNumbers }),
+  });
+}
+
+async function saveChannelEdit(withRebuild = false) {
+  const payload = buildEditChannelPayload();
+  if (!payload) return;
+  const num = payload.number;
   const r = await fetch(`/api/channels/${num}`, {
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
   });
   const d = await r.json();
-  if (d.ok) { closeEditModal(); loadChannelList(); }
-  else alert$(document.getElementById('ch-edit-alert'), d.error || 'Save failed.', 'error');
+  if (!d.ok) {
+    alert$(document.getElementById('ch-edit-alert'), d.error || 'Save failed.', 'error');
+    return;
+  }
+
+  const previewEl = document.getElementById('ch-edit-preview');
+  if (previewEl) {
+    const lines = [`Matching content: ${d.matching_count ?? '?'} items`];
+    if (d.preview_titles && d.preview_titles.length) {
+      lines.push(`Sample: ${d.preview_titles.slice(0, 5).join(' | ')}`);
+    }
+    previewEl.textContent = lines.join('  ');
+  }
+
+  if (withRebuild) {
+    await rebuildChannels([num]);
+  }
+  closeEditModal();
+  loadChannelList();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2616,6 +2878,8 @@ function buildChannelPayload() {
     genres:         tagData.genres,
     studios:        tagData.studios,
     keywords:       tagData.keywords,
+    custom_media_rating_keys: _specificKeys('builder', 'include'),
+    excluded_rating_keys: _specificKeys('builder', 'exclude'),
     max_year:       document.getElementById('b-max-year').value
                       ? parseInt(document.getElementById('b-max-year').value) : null,
     sorting_method: document.getElementById('b-sorting').value,
@@ -2623,6 +2887,7 @@ function buildChannelPayload() {
 }
 
 async function previewChannel() {
+  await ensureContentCatalog();
   const body = buildChannelPayload();
   if (!body) return;
   const r = await fetch('/api/channels/custom', {
@@ -2631,13 +2896,20 @@ async function previewChannel() {
     body: JSON.stringify({ ...body, _preview: true }),
   });
   const d = await r.json();
-  document.getElementById('preview-result').textContent =
-    (d.ok !== undefined || d.matching_count !== undefined)
-      ? `Matching content: ${d.matching_count ?? '?'} items`
-      : (d.error || 'Error');
+  if (d.error) {
+    document.getElementById('preview-result').textContent = d.error;
+    return;
+  }
+  const lines = [];
+  lines.push(`Matching content: ${d.matching_count ?? '?'} items`);
+  if (d.preview_titles && d.preview_titles.length) {
+    lines.push(`Sample: ${d.preview_titles.slice(0, 5).join(' | ')}`);
+  }
+  document.getElementById('preview-result').textContent = lines.join('  ');
 }
 
 async function createChannel() {
+  await ensureContentCatalog();
   const body = buildChannelPayload();
   if (!body) return;
   const r = await fetch('/api/channels/custom', {
@@ -2650,6 +2922,9 @@ async function createChannel() {
     alert$(document.getElementById('builder-alert'),
       `Channel ${body.number} created! (${d.matching_count} matching items) — go to Settings → Build Schedule.`,
       'success');
+    document.getElementById('preview-result').textContent = d.preview_titles && d.preview_titles.length
+      ? `Sample: ${d.preview_titles.slice(0, 5).join(' | ')}`
+      : '';
   } else {
     alert$(document.getElementById('builder-alert'), d.error || 'Error', 'error');
   }

@@ -127,6 +127,23 @@ def _all_channel_configs() -> list:
     return sorted(result, key=lambda c: c.number)
 
 
+def _matching_preview_titles(items: list, limit: int = 8) -> list[str]:
+    """Build a small unique preview list of matched titles for UI display."""
+    out = []
+    seen = set()
+    for it in items:
+        base = it.get("show_title") or it.get("title") or "Unknown"
+        ep = it.get("episode_title")
+        label = f"{base} — {ep}" if ep else base
+        if label in seen:
+            continue
+        seen.add(label)
+        out.append(label)
+        if len(out) >= limit:
+            break
+    return out
+
+
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -458,11 +475,16 @@ def api_create_custom_channel():
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
-    db.save_custom_channel(number, json.dumps(asdict(cfg)))
-
-    # Preview how many items match
+    is_preview = bool(data.get("_preview", False))
     matching = get_matching_content(cfg)
-    return jsonify({"ok": True, "matching_count": len(matching)})
+    if not is_preview:
+        db.save_custom_channel(number, json.dumps(asdict(cfg)))
+    return jsonify({
+        "ok": True,
+        "preview_only": is_preview,
+        "matching_count": len(matching),
+        "preview_titles": _matching_preview_titles(matching),
+    })
 
 
 @app.route("/api/channels/<int:number>", methods=["PUT"])
@@ -492,7 +514,11 @@ def api_edit_channel(number: int):
         db.save_custom_channel(number, json.dumps(cfg_dict))
 
     matching = get_matching_content(cfg)
-    return jsonify({"ok": True, "matching_count": len(matching)})
+    return jsonify({
+        "ok": True,
+        "matching_count": len(matching),
+        "preview_titles": _matching_preview_titles(matching),
+    })
 
 
 @app.route("/api/channels/<int:number>", methods=["DELETE"])
@@ -606,6 +632,66 @@ def api_content_count():
     return jsonify(db.get_content_count())
 
 
+@app.route("/api/content/search")
+def api_content_search():
+    """Search cached content for builder/editor include/exclude pickers.
+
+    Query params:
+      q      — optional case-insensitive substring match
+      types  — comma-separated list from: show,movie (default: show,movie)
+      limit  — max rows (default 300, hard max 1000)
+    """
+    q = (request.args.get("q") or "").strip().lower()
+    types_raw = (request.args.get("types") or "show,movie").lower()
+    allowed = {t.strip() for t in types_raw.split(",") if t.strip() in {"show", "movie"}}
+    if not allowed:
+        allowed = {"show", "movie"}
+
+    try:
+        limit = int(request.args.get("limit", 300))
+    except Exception:
+        limit = 300
+    limit = max(1, min(limit, 1000))
+
+    items = []
+    seen = set()
+
+    if "show" in allowed:
+        for r in db.get_all_content("show"):
+            rk = r.get("rating_key")
+            title = (r.get("title") or "").strip()
+            if not rk or not title:
+                continue
+            if q and q not in title.lower():
+                continue
+            key = ("show", rk)
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append({"rating_key": rk, "title": title, "type": "show"})
+            if len(items) >= limit:
+                break
+
+    if "movie" in allowed and len(items) < limit:
+        for r in db.get_all_content("movie"):
+            rk = r.get("rating_key")
+            title = (r.get("title") or "").strip()
+            if not rk or not title:
+                continue
+            if q and q not in title.lower():
+                continue
+            key = ("movie", rk)
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append({"rating_key": rk, "title": title, "type": "movie"})
+            if len(items) >= limit:
+                break
+
+    items.sort(key=lambda x: (x["title"].lower(), x["type"], x["rating_key"]))
+    return jsonify({"items": items[:limit]})
+
+
 @app.route("/api/channels/<int:number>/preview")
 def api_channel_preview(number: int):
     """Return matching content count for a channel."""
@@ -627,6 +713,31 @@ def api_channel_preview(number: int):
         return jsonify({"error": "Channel not found"}), 404
     matching = get_matching_content(cfg)
     return jsonify({"number": number, "matching_count": len(matching)})
+
+
+@app.route("/api/channels/preview-config", methods=["POST"])
+def api_preview_channel_config():
+    """Preview match count/titles for an arbitrary channel config without saving."""
+    data = request.get_json(force=True) or {}
+    if "number" not in data:
+        data["number"] = 0
+    if "name" not in data:
+        data["name"] = "Preview"
+
+    try:
+        cfg = ChannelConfig(**{
+            k: v for k, v in data.items()
+            if k in ChannelConfig.__dataclass_fields__
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    matching = get_matching_content(cfg)
+    return jsonify({
+        "ok": True,
+        "matching_count": len(matching),
+        "preview_titles": _matching_preview_titles(matching),
+    })
 
 
 # ── Thumbnail proxy ───────────────────────────────────────────────────────────

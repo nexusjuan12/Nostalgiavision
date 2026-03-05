@@ -92,14 +92,22 @@ def _content_matches_channel(item: dict, cfg: ChannelConfig,
         if not matched:
             return False
 
-    # Custom whitelist (if set, only those keys are allowed)
+    # Custom whitelist/exclusion:
+    # a picked show key should match all of its episodes via show_rating_key.
+    item_keys = {rk}
+    show_rk = item.get("show_rating_key")
+    if show_rk:
+        item_keys.add(show_rk)
+
     if cfg.custom_media_rating_keys:
-        if rk not in cfg.custom_media_rating_keys:
+        allow = set(cfg.custom_media_rating_keys)
+        if not (item_keys & allow):
             return False
 
-    # Custom exclusion
-    if rk in cfg.excluded_rating_keys:
-        return False
+    if cfg.excluded_rating_keys:
+        deny = set(cfg.excluded_rating_keys)
+        if item_keys & deny:
+            return False
 
     return True
 
