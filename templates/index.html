@@ -1752,28 +1752,38 @@ function renderTimeHeader(totalPx, gStart, gEnd) {
   }
 }
 
+function _updateNowTick() {
+  if (!_guideData) return;
+  const nowPx = Math.round((Date.now() - _guideData.start) * PX_PER_MS);
+  const tick = document.querySelector('.guide-now-tick');
+  if (tick) tick.style.left = `${nowPx}px`;
+}
+
 function scrollToNow() {
   if (!_guideData) return;
   _userScrolled  = false;
   _autoScrolling = true;
   const nowPx = Math.round((Date.now() - _guideData.start) * PX_PER_MS);
   document.getElementById('guide-scroll-wrap').scrollLeft = Math.max(0, nowPx);
+  _updateNowTick();
   // Double-rAF ensures all pending scroll events have fired before we clear
   // the suppression flag — avoids a race where the event fires after setTimeout
   requestAnimationFrame(() => requestAnimationFrame(() => { _autoScrolling = false; }));
 }
 
-// Every 15 s: either reload a stale guide window or nudge the scroll to track live
+// Every 5 s: either reload a stale guide window or nudge the scroll to track live.
+// Tick is always updated so the "now" marker stays accurate even when user is browsing.
 setInterval(() => {
   if (!_guideData) return;
   const nowMs = Date.now();
+  _updateNowTick();
   // If we're within 30 minutes of the guide window end, reload with a fresh anchor
   if (nowMs >= _guideData.end - 30 * 60 * 1000) {
     loadGuide();          // loadGuide() will re-anchor _guideViewStart automatically
   } else if (!_userScrolled) {
     scrollToNow();
   }
-}, 15000);
+}, 5000);
 
 function autoSelectFirstLive() {
   if (!_guideData || !_guideData.channels.length) return;

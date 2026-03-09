@@ -25,7 +25,7 @@ host = cfg.get("host", "127.0.0.1")
 port = int(cfg.get("port", 5000))
 url = f"http://127.0.0.1:{port}"
 
-print(f"Nostalgiavision → {url}")
+print(f"Nostalgiavision -> {url}")
 print("Press Ctrl+C to quit.\n")
 
 # Open browser after a short delay
