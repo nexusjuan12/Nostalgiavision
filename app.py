@@ -826,7 +826,7 @@ def watch(rating_key: str):
     except Exception:
         pass
 
-    thumb_url = f"/api/thumb?path={requests.utils.quote(thumb_path, safe='')}" if thumb_path else ""
+    thumb_url = f"../api/thumb?path={requests.utils.quote(thumb_path, safe='')}" if thumb_path else ""
 
     return render_template("player.html",
                            hls_url=hls_url,

@@ -36,6 +36,27 @@ Then open **http://localhost:5000** — the browser opens automatically.
 
 ---
 
+## Reverse proxy under a subpath
+
+Nostalgiavision can be served at a URL such as `https://example.com/ntv/`.
+Keep the trailing slash in the public URL and have the proxy strip `/ntv/`
+before forwarding requests to Flask. For nginx:
+
+```nginx
+location = /ntv { return 301 /ntv/; }
+
+location /ntv/ {
+    proxy_pass http://127.0.0.1:5000/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+The trailing slash on `proxy_pass` is significant: it forwards `/ntv/api/guide`
+to Flask as `/api/guide`.
+
+---
+
 ## First-time setup
 
 1. **Settings → Plex Connection** — enter your Plex server URL (e.g. `http://192.168.1.100:32400`) and your [Plex token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
