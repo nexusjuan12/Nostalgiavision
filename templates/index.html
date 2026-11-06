@@ -217,6 +217,19 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
 .settings-section h3{font-size:14px;font-weight:600;margin-bottom:12px;
   padding-bottom:8px;border-bottom:1px solid var(--divider)}
 
+/* ── Activity (live IPTV connections) ─── */
+.act-stream{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;margin-bottom:10px}
+.act-head{display:flex;align-items:center;gap:10px}
+.act-airing{font-size:12px;color:var(--text-sec);margin-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-viewers{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.act-viewers th{text-align:left;font-weight:500;color:var(--text-sec);
+  padding:4px 8px;border-bottom:1px solid var(--divider)}
+.act-viewers td{padding:6px 8px;border-bottom:1px solid var(--divider);vertical-align:top}
+.act-viewers tr:last-child td{border-bottom:none}
+.act-ua{color:var(--text-sec);word-break:break-all}
+
 /* ── Tag input ─── */
 .tag-input{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);
   border:1px solid var(--border);border-radius:6px;padding:6px 10px;
@@ -698,6 +711,7 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
       <div class="tab active" id="tab-btn-guide"     onclick="switchTab('guide')">Guide</div>
       <div class="tab"        id="tab-btn-channels"  onclick="switchTab('channels')">Channels</div>
       <div class="tab"        id="tab-btn-builder"   onclick="switchTab('builder')">Channel Builder</div>
+      <div class="tab"        id="tab-btn-activity"  onclick="switchTab('activity')">Activity</div>
       <div class="tab"        id="tab-btn-settings"  onclick="switchTab('settings')">Settings</div>
     </div>
     <div id="header-right">
@@ -945,6 +959,21 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
     </div>
   </div>
 
+  <!-- ══ ACTIVITY TAB ══ -->
+  <div class="tab-content" id="tab-activity">
+    <div class="tab-inner">
+      <div class="settings-section">
+        <h3>Live TV Connections</h3>
+        <div class="text-sec text-sm" style="margin-bottom:10px">
+          Everyone currently connected to a Jellyfin / IPTV channel stream (Jellyfin, VLC, Kodi, ...).
+          A Jellyfin viewer shows up as Jellyfin's own connection, not as the person watching in
+          Jellyfin. Playback inside this page's guide goes straight to Plex and is listed in Plex instead.
+        </div>
+        <div id="activity-list" class="text-sec text-sm">Loading…</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ SETTINGS TAB ══ -->
   <div class="tab-content" id="tab-settings">
     <div class="tab-inner">
@@ -1036,6 +1065,24 @@ textarea{resize:vertical;min-height:80px;font-family:inherit}
         <div class="btn-group">
           <button class="btn btn-primary" onclick="buildSchedule()">Build Schedule Now</button>
           <button class="btn btn-danger btn-sm" onclick="clearSchedule()">Clear All Programs</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Jellyfin / IPTV</h3>
+        <div class="text-sec text-sm" style="margin-bottom:10px">
+          In Jellyfin (Dashboard → Live TV) add the playlist as an M3U Tuner and the guide as an
+          XMLTV listing provider. Streams need ffmpeg on this machine. If Jellyfin runs elsewhere,
+          swap <code>localhost</code> for this machine's LAN address, or set <code>public_url</code>
+          in config.json.
+        </div>
+        <div class="form-group">
+          <label for="iptv-m3u">M3U playlist</label>
+          <input type="text" id="iptv-m3u" readonly onclick="this.select()">
+        </div>
+        <div class="form-group">
+          <label for="iptv-xmltv">XMLTV guide</label>
+          <input type="text" id="iptv-xmltv" readonly onclick="this.select()">
         </div>
       </div>
 
@@ -1249,13 +1296,14 @@ function toggleTabs() {
 function switchTab(id) {
   document.querySelectorAll('.tab,.tab-content').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
-  const tabs = ['guide','channels','builder','settings'];
+  const tabs = ['guide','channels','builder','activity','settings'];
   document.querySelectorAll('.tab').forEach((el, i) => {
     if (tabs[i] === id) el.classList.add('active');
   });
   if (id === 'guide')    loadGuide();
   if (id === 'channels') loadChannelList();
   if (id === 'builder')  ensureContentCatalog();
+  if (id === 'activity') refreshActivity();
   if (id === 'settings') loadSettings();
 }
 
@@ -1327,6 +1375,65 @@ async function pollStatus() {
   setTimeout(pollStatus, 3000);   // schedule next AFTER this one completes
 }
 pollStatus();  // kick off the first poll
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Activity — live IPTV connections
+// ══════════════════════════════════════════════════════════════════════════════
+function fmtElapsed(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`;
+}
+function fmtBytes(n) {
+  if (n < 1e6) return Math.round(n / 1e3) + ' KB';
+  return n < 1e9 ? (n / 1e6).toFixed(1) + ' MB' : (n / 1e9).toFixed(2) + ' GB';
+}
+function airingText(a) {
+  if (!a) return 'Starting…';
+  if (a.slate) return `Test pattern (${a.slate})`;
+  const ep = a.episode_title ? ` — ${a.episode_title}` : '';
+  const until = a.end_time
+    ? ' · until ' + new Date(a.end_time).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+    : '';
+  return `Now airing: ${a.title || 'Untitled'}${ep}${until}`;
+}
+function renderActivity(d) {
+  const el = document.getElementById('activity-list');
+  if (!d.streams.length) {
+    el.innerHTML = 'Nobody is watching right now.';
+    return;
+  }
+  el.innerHTML = d.streams.map(s => `
+    <div class="act-stream">
+      <div class="act-head">
+        <span class="ch-num">${escHtml(s.channel)}</span>
+        <span class="ch-name">${escHtml(s.name)}</span>
+        <span class="badge badge-live">${s.viewers.length} watching</span>
+      </div>
+      <div class="act-airing">${escHtml(airingText(s.airing))}</div>
+      <table class="act-viewers">
+        <tr><th>Address</th><th>Client</th><th>Connected</th><th>Sent</th></tr>
+        ${s.viewers.map(v => `
+          <tr>
+            <td>${escHtml(v.remote_addr || 'unknown')}</td>
+            <td class="act-ua" title="${escHtml(v.user_agent)}">${escHtml(v.user_agent || '—')}</td>
+            <td>${fmtElapsed(v.duration_s)}</td>
+            <td>${fmtBytes(v.bytes_sent)}</td>
+          </tr>`).join('')}
+      </table>
+    </div>`).join('');
+}
+async function refreshActivity() {
+  try {
+    const d = await (await fetch('/api/activity')).json();
+    document.getElementById('tab-btn-activity').textContent =
+      d.viewer_count ? `Activity (${d.viewer_count})` : 'Activity';
+    if (document.getElementById('tab-activity').classList.contains('active')) renderActivity(d);
+  } catch(e) {}
+}
+(function pollActivity() {
+  refreshActivity().finally(() => setTimeout(pollActivity, 3000));
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Guide loading + rendering
@@ -2953,6 +3060,9 @@ async function loadSettings() {
   const r = await fetch(appUrl('/api/status'));
   const d = await r.json();
   if (d.plex_url) document.getElementById('s-plex-url').value = d.plex_url;
+  if (!_selectedLibraries.size) (d.library_ids || []).forEach(id => _selectedLibraries.add(id));
+  document.getElementById('iptv-m3u').value   = location.origin + '/iptv/channels.m3u';
+  document.getElementById('iptv-xmltv').value = location.origin + '/iptv/guide.xml';
   loadLibraries();
 }
 

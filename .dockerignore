@@ -1,0 +1,17 @@
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# runtime state and credentials are mounted, never baked into the image
+config.json
+.env
+data/
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+tests/
+Miniconda3-latest-Linux-x86_64.sh

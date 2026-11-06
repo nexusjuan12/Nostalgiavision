@@ -339,6 +339,15 @@ def get_all_programs(start: int, end: int) -> list:
         return [dict(r) for r in rows]
 
 
+def get_scheduled_channel_ids(after: int) -> set:
+    """Channel ids that have a program airing now or later (end_time > after)."""
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT channel_id FROM programs WHERE end_time > ?", (after,)
+        ).fetchall()
+        return {r["channel_id"] for r in rows}
+
+
 def get_latest_program_end(channel_id: str) -> int:
     with get_db() as conn:
         row = conn.execute(

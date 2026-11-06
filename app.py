@@ -16,19 +16,31 @@ Endpoints:
   POST   /api/channels/<num>/logo   → upload a custom logo image
   GET    /api/logo/<num>            → serve a channel logo
   GET    /api/content/count         → content cache statistics
+  GET    /iptv/channels.m3u         → M3U tuner playlist (Jellyfin, VLC, ...)
+  GET    /iptv/guide.xml            → XMLTV guide matching the playlist
+  GET    /iptv/stream/<num>.ts      → continuous MPEG-TS stream for a channel
+  GET    /api/activity              → live IPTV stream connections (who is watching what)
 """
 
 import json
 import logging
 import requests
 import os
+import re
+import shutil
 import threading
 import time
+import uuid
 from dataclasses import asdict
+from urllib.parse import urlencode
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import (Flask, Response, abort, jsonify, render_template, request,
+                   send_from_directory)
 
 import database as db
+import iptv
+import media_proxy
+import streamer
 from channels import (PREDEFINED_CHANNELS, PREDEFINED_BY_NUMBER,
                       ChannelConfig, RANDOM)
 from library_sync import sync_library
@@ -41,7 +53,9 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+# NOSTALGIAVISION_CONFIG lets a container keep config.json on a mounted volume.
+CONFIG_PATH = (os.environ.get("NOSTALGIAVISION_CONFIG")
+               or os.path.join(os.path.dirname(__file__), "config.json"))
 
 app = Flask(__name__)
 
@@ -63,14 +77,57 @@ _CONN_CACHE_TTL = 30.0
 _conn_check_lock = threading.Lock()
 
 
-def _load_config() -> dict:
+def _split_ids(raw: str) -> list:
+    return [p for p in re.split(r"[,\s]+", raw) if p]
+
+
+# Environment variables that override the matching config.json key. Empty/unset
+# variables are ignored, so a compose file can pass them through unconditionally.
+# The settings mirror their config keys; HOST/PORT are prefixed because they are
+# deployment details (the Docker image pins them) and bare HOST is often set by shells.
+_ENV_OVERRIDES = {
+    "PLEX_URL": ("plex_url", str),
+    "PLEX_TOKEN": ("plex_token", str),
+    "LIBRARY_IDS": ("library_ids", _split_ids),        # comma/space separated
+    "SCHEDULE_DAYS_AHEAD": ("schedule_days_ahead", int),
+    "PUBLIC_URL": ("public_url", str),
+    "NOSTALGIAVISION_HOST": ("host", str),
+    "NOSTALGIAVISION_PORT": ("port", int),
+}
+
+
+def _env_overrides() -> dict:
+    out = {}
+    for var, (key, parse) in _ENV_OVERRIDES.items():
+        raw = os.environ.get(var, "").strip()
+        if not raw:
+            continue
+        try:
+            out[key] = parse(raw)
+        except ValueError:
+            log.warning("Ignoring %s: invalid value", var)
+    return out
+
+
+def _load_file_config() -> dict:
+    """config.json exactly as stored on disk (it is optional)."""
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH) as f:
             return json.load(f)
     return {}
 
 
+def _load_config() -> dict:
+    """Effective settings: config.json with environment overrides layered on top.
+
+    Read-modify-write code must use _load_file_config() instead, so values that
+    only exist in the environment (e.g. the Plex token) are never written to disk.
+    """
+    return {**_load_file_config(), **_env_overrides()}
+
+
 def _save_config(cfg: dict):
+    os.makedirs(os.path.dirname(CONFIG_PATH) or ".", exist_ok=True)
     with open(CONFIG_PATH, "w") as f:
         json.dump(cfg, f, indent=2)
 
@@ -86,7 +143,17 @@ def _get_client() -> PlexClient | None:
     return PlexClient(url, token)
 
 
+def _plex_upstream() -> tuple | None:
+    client = _get_client()
+    return (client.base_url, client.token) if client else None
+
+
+# Loopback gateway that ffmpeg reads media through, so the Plex token never appears in
+# its command line (visible to every local user via `ps`).
+_media_proxy = media_proxy.MediaProxy(_plex_upstream)
+
 LOGOS_DIR = os.path.join(os.path.dirname(__file__), "data", "logos")
+SLATE_IMAGE = os.path.join(os.path.dirname(__file__), "image", "test-pattern.png")
 
 
 def _logo_url(number: int) -> str | None:
@@ -195,6 +262,7 @@ def api_status():
             "connected": connected,
             "plex_url": cfg.get("plex_url", ""),
             "has_token": bool(cfg.get("plex_token")),
+            "library_ids": [str(i) for i in cfg.get("library_ids", [])],
             "cache": cache,
             "content_counts": counts,
             "sync_status": _sync_status,
@@ -207,6 +275,12 @@ def api_status():
 
 @app.route("/api/connect", methods=["POST"])
 def api_connect():
+    # Env vars win over config.json, so saving here would appear to work but not stick.
+    pinned = [v for v in ("PLEX_URL", "PLEX_TOKEN") if os.environ.get(v, "").strip()]
+    if pinned:
+        return jsonify({"ok": False, "error": (
+            f"{' and '.join(pinned)} set via environment — change it there and restart")}), 409
+
     data = request.get_json(force=True)
     url = (data.get("plex_url") or "").strip().rstrip("/")
     token = (data.get("plex_token") or "").strip()
@@ -233,7 +307,7 @@ def api_connect():
     if not ok:
         return jsonify({"ok": False, "error": "Could not connect — check URL and token"}), 401
 
-    cfg = _load_config()
+    cfg = _load_file_config()
     cfg["plex_url"] = url
     cfg["plex_token"] = token
     _save_config(cfg)
@@ -274,7 +348,7 @@ def api_sync():
         return jsonify({"ok": False, "error": "No library_ids provided"}), 400
 
     # Persist selected library IDs
-    cfg = _load_config()
+    cfg = _load_file_config()
     cfg["library_ids"] = library_ids
     _save_config(cfg)
 
@@ -769,34 +843,66 @@ def api_thumb():
         return "", 502
 
 
-# ── Video player (HLS with server-side audio transcode) ───────────────────────
+# ── Plex media for browsers (token stays on the server) ───────────────────────
 
-@app.route("/watch/<rating_key>")
-def watch(rating_key: str):
-    """Serve a full-screen HLS video player for a Plex media item.
+_PROXY_RELAYED_HEADERS = ("Content-Type", "Content-Length", "Content-Range", "Accept-Ranges")
 
-    Uses Plex's universal transcoder with directStream=1 so video is copied
-    as-is but audio is transcoded to AAC — fixes AC3/DTS playback in browsers.
+
+@app.route("/plex/<kind>/<path:subpath>")
+def plex_media(kind: str, subpath: str):
+    """Token-free window onto Plex media for the browser: HLS transcodes and original files.
+
+    Plex wants its token on every request. Putting it in URLs the browser sees would leak it into
+    page source, history and logs, so the browser talks to this route and the token is added here.
+    Only the paths in media_proxy.BROWSER_PREFIXES are reachable — not the rest of the Plex API.
     """
-    import uuid
-    from urllib.parse import urlencode
-
-    cfg = _load_config()
-    plex_url = cfg.get("plex_url", "")
-    token = cfg.get("plex_token", "")
-
-    if not plex_url or not token:
+    prefix = media_proxy.BROWSER_PREFIXES.get(kind)
+    if prefix is None or any(seg in (".", "..") for seg in subpath.split("/")):
+        abort(404)
+    target = _plex_upstream()
+    if not target:
         return "Not connected to Plex", 503
 
-    session_id = uuid.uuid4().hex[:16]
-    client_id = f"nostalgiavision-{session_id}"
+    plex_path = prefix + subpath
+    try:
+        upstream = media_proxy.open_plex(*target, plex_path, request.args.items(multi=True),
+                                         request.headers.get("Range"))
+    except requests.RequestException as exc:
+        # Never log the exception text: requests embeds the full URL, token included.
+        log.warning("Plex proxy failed for %s (%s)", plex_path, type(exc).__name__)
+        return "", 502
 
-    hls_params = urlencode({
-        "X-Plex-Token": token,
+    content_type = upstream.headers.get("Content-Type", "").lower()
+    if upstream.status_code == 200 and ("mpegurl" in content_type or subpath.endswith(".m3u8")):
+        with upstream:
+            playlist = media_proxy.rewrite_playlist(
+                upstream.content.decode("utf-8", "replace"), target[0])
+        return Response(playlist, mimetype="application/vnd.apple.mpegurl",
+                        headers={"Cache-Control": "no-store"})
+
+    resp = Response(upstream.raw.stream(64 * 1024, decode_content=False),
+                    status=upstream.status_code)
+    for name in _PROXY_RELAYED_HEADERS:
+        if name in upstream.headers:
+            resp.headers[name] = upstream.headers[name]
+    resp.call_on_close(upstream.close)
+    return resp
+
+
+# ── Video player (HLS with server-side audio transcode) ───────────────────────
+
+def _hls_start_url(rating_key: str) -> str:
+    """Token-free URL (served by plex_media) that starts a Plex HLS transcode of an item.
+
+    Uses Plex's universal transcoder with directStream=1 so video is copied as-is but audio is
+    transcoded to AAC — fixes AC3/DTS playback in browsers.
+    """
+    session_id = uuid.uuid4().hex[:16]
+    params = urlencode({
         "X-Plex-Product": "Nostalgiavision",
         "X-Plex-Version": "0.3.17",
         "X-Plex-Platform": "Chrome",
-        "X-Plex-Client-Identifier": client_id,
+        "X-Plex-Client-Identifier": f"nostalgiavision-{session_id}",
         "path": f"/library/metadata/{rating_key}",
         "protocol": "hls",
         "directPlay": "0",
@@ -807,10 +913,22 @@ def watch(rating_key: str):
         "subtitleSize": "100",
         "session": session_id,
     })
-    hls_url = f"{plex_url}/video/:/transcode/universal/start.m3u8?{hls_params}"
+    return f"/plex/hls/start.m3u8?{params}"
+
+
+@app.route("/watch/<rating_key>")
+def watch(rating_key: str):
+    """Serve a full-screen HLS video player for a Plex media item.
+
+    Uses Plex's universal transcoder with directStream=1 so video is copied
+    as-is but audio is transcoded to AAC — fixes AC3/DTS playback in browsers.
+    """
+    client = _get_client()
+    if not client:
+        return "Not connected to Plex", 503
+    hls_url = _hls_start_url(rating_key)
 
     # Fetch metadata for the title display
-    client = _get_client()
     title = "Nostalgiavision"
     thumb_path = None
     try:
@@ -838,38 +956,11 @@ def watch(rating_key: str):
 @app.route("/api/hls_url/<rating_key>")
 def api_hls_url(rating_key: str):
     """Return HLS transcode URL + metadata for embedding in the guide player."""
-    import uuid
-    from urllib.parse import urlencode
-
-    cfg = _load_config()
-    plex_url = cfg.get("plex_url", "")
-    token = cfg.get("plex_token", "")
-
-    if not plex_url or not token:
-        return jsonify({"error": "Not connected to Plex"}), 503
-
-    session_id = uuid.uuid4().hex[:16]
-    client_id = f"nostalgiavision-{session_id}"
-
-    hls_params = urlencode({
-        "X-Plex-Token": token,
-        "X-Plex-Product": "Nostalgiavision",
-        "X-Plex-Version": "0.3.17",
-        "X-Plex-Platform": "Chrome",
-        "X-Plex-Client-Identifier": client_id,
-        "path": f"/library/metadata/{rating_key}",
-        "protocol": "hls",
-        "directPlay": "0",
-        "directStream": "1",
-        "mediaIndex": "0",
-        "partIndex": "0",
-        "fastSeek": "1",
-        "subtitleSize": "100",
-        "session": session_id,
-    })
-    hls_url = f"{plex_url}/video/:/transcode/universal/start.m3u8?{hls_params}"
-
     client = _get_client()
+    if not client:
+        return jsonify({"error": "Not connected to Plex"}), 503
+    hls_url = _hls_start_url(rating_key)
+
     title = ""
     thumb_url = None
     duration_ms = None
@@ -951,28 +1042,28 @@ def api_stream(rating_key: str):
     if not item:
         return jsonify({"error": "Item not found"}), 404
 
-    cfg = _load_config()
-    plex_url = cfg.get("plex_url", "")
-    token = cfg.get("plex_token", "")
-
-    # Build direct stream URL from the first media part
+    # Direct stream URL from the first media part, served by this app (/plex/part/...) so the
+    # Plex token never leaves the server.
     stream_url = None
+    part_prefix = media_proxy.BROWSER_PREFIXES["part"]
     media_list = item.get("Media", [])
     if media_list:
         parts = media_list[0].get("Part", [])
         if parts:
             part_key = parts[0].get("key", "")
-            stream_url = f"{plex_url}{part_key}?X-Plex-Token={token}"
+            if part_key.startswith(part_prefix):
+                stream_url = (f"{_iptv_base_url()}/plex/part/"
+                              f"{requests.utils.quote(part_key[len(part_prefix):], safe='/')}")
 
-    # Build Plex Web URL (opens item in the local Plex web UI)
+    # Plex Web URL (opens the item in Plex Web, which uses the browser's own Plex sign-in)
     try:
         server_info = client.get_server_info()
         machine_id = server_info.get("machineIdentifier", "")
         item_key = item.get("key", f"/library/metadata/{rating_key}")
         encoded_key = requests.utils.quote(item_key, safe="")
         plex_web_url = (
-            f"{plex_url}/web/index.html#!/server/{machine_id}"
-            f"/details?key={encoded_key}&X-Plex-Token={token}"
+            f"{client.base_url}/web/index.html#!/server/{machine_id}"
+            f"/details?key={encoded_key}"
         )
     except Exception:
         plex_web_url = None
@@ -1012,6 +1103,90 @@ def api_play_on_client():
         return jsonify({"ok": ok})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 502
+
+
+# ── IPTV: M3U tuner + XMLTV guide ─────────────────────────────────────────────
+
+IPTV_GUIDE_HORIZON_MS = 14 * 24 * 3_600_000
+
+
+def _iptv_base_url() -> str:
+    """Absolute base URL for clients; `public_url` in config.json overrides the request's host."""
+    override = (_load_config().get("public_url") or "").strip().rstrip("/")
+    return override or request.url_root.rstrip("/")
+
+
+def _iptv_channels(now_ms: int) -> list:
+    """Visible channels that have programming scheduled, shaped for the iptv builders."""
+    scheduled = db.get_scheduled_channel_ids(now_ms)
+    return [
+        {"number": c.number, "name": c.name, "type": c.type, "logo_url": _logo_url(c.number)}
+        for c in _all_channel_configs() if str(c.number) in scheduled
+    ]
+
+
+@app.route("/iptv/channels.m3u")
+def iptv_playlist():
+    channels = _iptv_channels(int(time.time() * 1000))
+    return Response(iptv.build_m3u(channels, _iptv_base_url()),
+                    mimetype="audio/x-mpegurl")
+
+
+@app.route("/iptv/guide.xml")
+def iptv_guide():
+    now_ms = int(time.time() * 1000)
+    by_channel: dict = {}
+    for p in db.get_all_programs(now_ms, now_ms + IPTV_GUIDE_HORIZON_MS):
+        by_channel.setdefault(p["channel_id"], []).append(p)
+    xml = iptv.build_xmltv(_iptv_channels(now_ms), by_channel, _iptv_base_url())
+    return Response(xml, mimetype="application/xml")
+
+
+@app.route("/iptv/stream/<int:number>.ts")
+def iptv_stream(number: int):
+    """Continuous MPEG-TS for one channel, joined at whatever is airing right now."""
+    if number not in {c.number for c in _all_channel_configs()}:
+        abort(404)
+    if request.method == "HEAD":
+        return Response(mimetype="video/MP2T")
+
+    client = _get_client()
+    if not client:
+        return "Not connected to Plex", 503
+    settings = streamer.StreamSettings.from_config(
+        _load_config().get("iptv"), slate_image=SLATE_IMAGE)
+    if not shutil.which(settings.ffmpeg):
+        return (f"ffmpeg not found ('{settings.ffmpeg}') — install it or set "
+                "iptv.ffmpeg_path in config.json"), 503
+
+    def source_url(prog: dict) -> str | None:
+        key = prog.get("media_part_key")
+        return _media_proxy.url_for(key) if key else None
+
+    relay, sub = streamer.subscribe(
+        number, settings, source_url,
+        remote_addr=request.remote_addr or "",
+        user_agent=request.headers.get("User-Agent", "")[:200])
+    resp = Response(iter(sub), mimetype="video/MP2T",
+                    headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    resp.call_on_close(lambda: relay.remove_subscriber(sub))
+    return resp
+
+
+@app.route("/api/activity")
+def api_activity():
+    """Live IPTV connections: each channel being streamed, what is airing, and who is watching.
+
+    Only covers streams this app serves (/iptv/stream); Plex does not list these as sessions.
+    """
+    names = {c.number: c.name for c in _all_channel_configs()}
+    streams = []
+    for s in streamer.active_streams():
+        streams.append({**s, "name": names.get(s["channel"], f"Channel {s['channel']}")})
+    return jsonify({
+        "streams": streams,
+        "viewer_count": sum(len(s["viewers"]) for s in streams),
+    })
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

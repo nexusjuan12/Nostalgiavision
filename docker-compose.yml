@@ -1,0 +1,31 @@
+services:
+  nostalgiavision:
+    build:
+      context: .
+      args:
+        # Match the host user that owns ./data (see `id -u` / `id -g`).
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: nostalgiavision:latest
+    container_name: nostalgiavision
+    restart: unless-stopped
+    ports:
+      # Only the published (host) side is configurable; the app always listens on 5000 inside.
+      - "${HOST_PORT:-5000}:5000"
+    environment:
+      # All optional — values come from your shell or a .env file next to this one
+      # (see .env.example). When set they override config.json; leave unset to configure
+      # everything from the Settings page instead.
+      # "PLEX_URL" must be reachable from the container (it streams from Plex for browsers
+      # and IPTV clients), so use the server's LAN address rather than localhost.
+      PLEX_URL: ${PLEX_URL:-}
+      PLEX_TOKEN: ${PLEX_TOKEN:-}
+      LIBRARY_IDS: ${LIBRARY_IDS:-}              # e.g. "1,2"
+      SCHEDULE_DAYS_AHEAD: ${SCHEDULE_DAYS_AHEAD:-}
+      PUBLIC_URL: ${PUBLIC_URL:-}                # base URL put in the IPTV playlist/guide
+    volumes:
+      # SQLite library cache, schedules, custom channels, uploaded logos, and config.json
+      # (written by the Settings page; optional if you use the variables above).
+      #- ./data:/app/data
+      - /var/lib/nostalgiavision:/app/data
+      #- ./config.json:/app/data/config.json

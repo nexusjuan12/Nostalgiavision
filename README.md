@@ -34,6 +34,34 @@ python start.py
 
 Then open **http://localhost:5000** — the browser opens automatically.
 
+### Run with Docker
+
+```bash
+cp .env.example .env     # then set PLEX_URL, PLEX_TOKEN and LIBRARY_IDS (all optional)
+docker compose up -d --build
+```
+
+Then open **http://localhost:5000**. No `config.json` is needed: Plex settings come from environment variables (via `.env`, or your shell), or you can leave them blank and fill in the Settings page instead. Everything the app stores — the SQLite library cache, schedules, channel logos, and a `config.json` written by the Settings page — lives in `./data`, which is mounted into the container, so it survives rebuilds.
+
+| Variable | Description |
+|----------|-------------|
+| `PLEX_URL` | Base URL of your Plex server |
+| `PLEX_TOKEN` | Plex authentication token |
+| `LIBRARY_IDS` | Library section IDs to sync, comma separated (e.g. `1,2`); pre-selected in Settings → Libraries |
+| `SCHEDULE_DAYS_AHEAD` | Days of schedule to generate (default `3`) |
+| `PUBLIC_URL` | Base URL written into the IPTV playlist and guide |
+| `HOST_PORT` | Compose only: port to publish on the host (default `5000`) |
+
+Notes:
+
+- Environment variables take precedence over `config.json`, and are never written to it. While `PLEX_URL`/`PLEX_TOKEN` are set, the Settings page refuses to change them — change them in `.env` and run `docker compose up -d` again.
+- Setting `LIBRARY_IDS` pre-selects those libraries; you still run **Sync Selected** and **Build Schedule Now** (or call `POST /api/sync` with `{}` to sync the configured libraries).
+- Host and port don't need configuring: the container always listens on `0.0.0.0:5000` regardless of `config.json`.
+- Already have a `config.json`? Copy it to `data/config.json` and it will be used (variables still override it).
+- `PLEX_URL` must be reachable from the **container**, which is what streams from Plex on your behalf — browsers only ever talk to NostalgiaVision. Use the server's LAN address, not `localhost` (inside the container that means the container itself).
+- The container runs as UID/GID 1000. If your user differs, set `APP_UID` / `APP_GID` when building so `./data` stays writable.
+- Logs: `docker compose logs -f` · Stop: `docker compose down`
+
 ---
 
 ## Reverse proxy under a subpath
@@ -78,6 +106,7 @@ to Flask as `/api/guide`.
 
 ### Playback
 - HLS live stream via your Plex server, seeking to the current position automatically
+- Playback is streamed *through* NostalgiaVision (`/plex/hls/…`, `/plex/part/…`), which adds the Plex token server-side — the token never appears in a URL, page or API response the browser sees. Only those two Plex path prefixes are exposed, not the rest of the Plex API
 - Auto-advances to the next program when the current one ends
 - "We'll Be Right Back" overlay for genuine gaps between scheduled programs
 - Volume, mute, seek-to-live, fullscreen, and play-from-start controls
@@ -100,6 +129,36 @@ to Flask as `/api/guide`.
 
 ---
 
+## Jellyfin / IPTV (M3U tuner + XMLTV guide)
+
+NostalgiaVision can act as a live-TV tuner for Jellyfin (or any IPTV client such as VLC or Kodi):
+
+| URL | What it is |
+|-----|------------|
+| `http://<host>:5000/iptv/channels.m3u` | M3U playlist — one entry per visible channel that has programming scheduled |
+| `http://<host>:5000/iptv/guide.xml` | XMLTV guide for the scheduled programs (channel ids match the playlist's `tvg-id`) |
+| `http://<host>:5000/iptv/stream/<number>.ts` | Continuous MPEG-TS stream for one channel |
+
+The same two URLs are shown under **Settings → Jellyfin / IPTV**.
+
+**In Jellyfin:** Dashboard → Live TV → add an **M3U Tuner** with the playlist URL, then add an **XMLTV** TV guide data provider with the guide URL. Map channels if Jellyfin doesn't do it automatically. Use this machine's LAN address (not `localhost`) when Jellyfin runs elsewhere — or set `public_url` in `config.json` so the playlist always contains the right address.
+
+**How streaming works.** When a client tunes a channel, NostalgiaVision looks up what is airing right now, starts [ffmpeg](https://ffmpeg.org/) on that file at the correct offset, and rolls straight into the next program when it ends — so the stream never ends the way a single Plex playback would. Every program is re-encoded to the same H.264/AAC format (1280×720 by default) so mixed sources (AVI, MKV, SD, 1080p…) play back seamlessly. Details worth knowing:
+
+- **ffmpeg must be installed** and on `PATH` (the Docker image includes it). The playlist and guide work without it; only the streams need it.
+- Channels share one ffmpeg process however many clients are watching, and it shuts down ~10 seconds after the last viewer leaves. Each *watched* channel costs roughly half a core to a full core of software encoding at the default 720p.
+- The stream pauses for about half a second at each program change while the next file opens.
+- During a gap in the schedule — or if a file can't be played — the stream airs the test-pattern slate rather than disconnecting.
+- Media is read from Plex as the original file. ffmpeg never sees the Plex token: a command line is visible to every local user (`ps`, `docker top`), so ffmpeg reads through a small loopback-only gateway (`media_proxy.py`) that adds the token itself. What shows up in `ps` is only `http://127.0.0.1:<port>/<signature>/<path>`; the signature changes on every restart, covers just that one file, and the gateway refuses anything it didn't sign. Clients of the feed only ever see NostalgiaVision URLs.
+- **Who is watching:** the **Activity** tab lists every live connection — channel, what is airing, and each viewer's address, client (User-Agent), time connected and data sent (`GET /api/activity` returns the same as JSON). Connects and disconnects are also logged. Because NostalgiaVision reads the raw file from Plex, these streams do **not** appear in Plex's dashboard, and Jellyfin relays one connection per channel, so a Jellyfin viewer appears here as the Jellyfin server's address rather than as the person watching.
+- **The schedule does not extend itself.** Once it runs out, channels drop out of the playlist and viewers see the slate. For an unattended tuner, rebuild periodically — e.g. a daily cron job:
+  `curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:5000/api/schedule/build`
+  (a rebuild regenerates everything that hasn't aired yet, so Jellyfin's guide will pick up the new lineup on its next refresh).
+
+The optional `public_url` and `iptv` settings are listed under [Configuration](#configuration).
+
+---
+
 ## Project structure
 
 ```
@@ -109,6 +168,9 @@ nostalgiavision/
 ├── scheduler.py     # Schedule generation (4 algorithms)
 ├── library_sync.py  # Plex → SQLite content sync
 ├── plex_client.py   # Plex HTTP API wrapper
+├── iptv.py          # M3U playlist + XMLTV guide builders
+├── streamer.py      # ffmpeg relay: schedule → continuous MPEG-TS per channel
+├── media_proxy.py   # loopback gateway so ffmpeg reads Plex media without the token
 ├── database.py      # SQLite layer (content cache + EPG)
 ├── start.py         # Entry point
 ├── config.json      # Runtime config (Plex URL, token, etc.)
@@ -122,7 +184,7 @@ nostalgiavision/
 
 ## Configuration
 
-`config.json` is required — copy `config.example.json`, fill in your Plex URL and token, and the app will use it on every start. Available options:
+Outside Docker, `config.json` is required — copy `config.example.json`, fill in your Plex URL and token, and the app will use it on every start. (The Docker image doesn't need one; see [Run with Docker](#run-with-docker).) Available options:
 
 ```json
 {
@@ -131,9 +193,19 @@ nostalgiavision/
   "library_ids": ["1", "2"],
   "schedule_days_ahead": 3,
   "port": 5000,
-  "host": "0.0.0.0"
+  "host": "0.0.0.0",
+  "public_url": "",
+  "iptv": {
+    "resolution": "1280x720",
+    "video_bitrate": "3000k",
+    "audio_bitrate": "128k",
+    "preset": "veryfast",
+    "ffmpeg_path": "ffmpeg"
+  }
 }
 ```
+
+The last two keys only matter for the [Jellyfin / IPTV feed](#jellyfin--iptv-m3u-tuner--xmltv-guide) and can be left out.
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -143,6 +215,12 @@ nostalgiavision/
 | `schedule_days_ahead` | `3` | How many days of schedule to generate |
 | `port` | `5000` | Port the web UI listens on |
 | `host` | `0.0.0.0` | Bind address (`0.0.0.0` = accessible on the network) |
+| `public_url` | *(blank — taken from the request)* | Address clients should use in the IPTV playlist, guide and stream links, e.g. `http://192.168.1.50:5000`. Set it when Jellyfin reaches this app by a different address than your browser does (Docker, reverse proxy). Also settable as `PUBLIC_URL` |
+| `iptv.resolution` | `1280x720` | Size every IPTV stream is encoded to (`WIDTHxHEIGHT`) |
+| `iptv.video_bitrate` | `3000k` | IPTV video bitrate |
+| `iptv.audio_bitrate` | `128k` | IPTV audio bitrate |
+| `iptv.preset` | `veryfast` | x264 speed preset — faster means less CPU but lower quality at the same bitrate |
+| `iptv.ffmpeg_path` | `ffmpeg` | ffmpeg binary to use if it isn't on `PATH` |
 
 ---
 

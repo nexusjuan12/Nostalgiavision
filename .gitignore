@@ -5,6 +5,9 @@ Miniconda3-latest-Linux-x86_64.sh
 # user credentials — copy config.example.json → config.json and fill in your values
 config.json
 
+# docker compose env (holds PLEX_TOKEN)
+.env
+
 # runtime data
 data/
 *.pyc
