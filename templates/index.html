@@ -1425,7 +1425,7 @@ function renderActivity(d) {
 }
 async function refreshActivity() {
   try {
-    const d = await (await fetch('/api/activity')).json();
+    const d = await (await fetch(appUrl('/api/activity'))).json();
     document.getElementById('tab-btn-activity').textContent =
       d.viewer_count ? `Activity (${d.viewer_count})` : 'Activity';
     if (document.getElementById('tab-activity').classList.contains('active')) renderActivity(d);
@@ -2054,7 +2054,7 @@ function loadLivePreview(ratingKey, startTimeMs) {
           backBufferLength: 90,
           startPosition: offsetSec,
         });
-        _hlsInstance.loadSource(data.hls_url);
+        _hlsInstance.loadSource(appUrl(data.hls_url));
         _hlsInstance.attachMedia(video);
         _hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           video.currentTime = offsetSec;
@@ -2086,7 +2086,7 @@ function loadLivePreview(ratingKey, startTimeMs) {
         });
         video.addEventListener('ended', _advanceIfCurrent, { once: true });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = data.hls_url;
+        video.src = appUrl(data.hls_url);
         video.addEventListener('loadedmetadata', () => {
           video.currentTime = offsetSec;
           video.muted = false;
@@ -2405,7 +2405,7 @@ function playNow() {
       video.style.display   = 'block';
       if (typeof Hls !== 'undefined' && Hls.isSupported()) {
         _hlsInstance = new Hls({ enableWorker: true, backBufferLength: 90 });
-        _hlsInstance.loadSource(data.hls_url);
+        _hlsInstance.loadSource(appUrl(data.hls_url));
         _hlsInstance.attachMedia(video);
         _hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           video.currentTime = 0;
@@ -2414,7 +2414,7 @@ function playNow() {
           updateVideoCtrlState();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = data.hls_url;
+        video.src = appUrl(data.hls_url);
         video.currentTime = 0;
         video.muted = false;
         video.play().catch(() => {});
@@ -3061,8 +3061,8 @@ async function loadSettings() {
   const d = await r.json();
   if (d.plex_url) document.getElementById('s-plex-url').value = d.plex_url;
   if (!_selectedLibraries.size) (d.library_ids || []).forEach(id => _selectedLibraries.add(id));
-  document.getElementById('iptv-m3u').value   = location.origin + '/iptv/channels.m3u';
-  document.getElementById('iptv-xmltv').value = location.origin + '/iptv/guide.xml';
+  document.getElementById('iptv-m3u').value   = appUrl('/iptv/channels.m3u');
+  document.getElementById('iptv-xmltv').value = appUrl('/iptv/guide.xml');
   loadLibraries();
 }
 

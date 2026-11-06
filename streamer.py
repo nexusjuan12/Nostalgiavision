@@ -232,6 +232,8 @@ class ChannelRelay:
                     log.warning("Channel %d: dropping a viewer that fell too far behind", self.number)
                     self._subs.discard(sub)
                     sub.closed.set()
+            if not self._subs and self._idle_since is None:
+                self._idle_since = time.monotonic()
 
     # -- lifecycle --
 
@@ -268,11 +270,15 @@ class ChannelRelay:
         proc = self._proc
         if proc is None or proc.poll() is not None:
             return
-        proc.terminate()
+        try:
+            proc.terminate()
+        except ProcessLookupError:
+            return
         try:
             proc.wait(timeout=3)
         except subprocess.TimeoutExpired:
             proc.kill()
+            proc.wait()
 
     # -- ffmpeg --
 
@@ -383,6 +389,9 @@ class ChannelRelay:
             log.exception("Channel %d: relay crashed", self.number)
         finally:
             self.stop()
+            with _registry_lock:
+                if _relays.get(self.number) is self:
+                    _relays.pop(self.number)
             log.info("Channel %d: relay stopped", self.number)
 
 

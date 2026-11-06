@@ -28,7 +28,7 @@ COPY --chown=app:app . .
 
 # data/ holds all runtime state (SQLite DB, channel logos and config.json). Mount a
 # volume there so it survives the container (see docker-compose.yml).
-RUN mkdir data && chown app:app data
+RUN mkdir -p data && chown app:app data
 USER app
 
 # Container contract: always listen on 0.0.0.0:5000 whatever config.json says, and keep
@@ -36,7 +36,8 @@ USER app
 # SCHEDULE_DAYS_AHEAD and PUBLIC_URL can be passed as environment variables instead.
 ENV NOSTALGIAVISION_HOST=0.0.0.0 \
     NOSTALGIAVISION_PORT=5000 \
-    NOSTALGIAVISION_CONFIG=/app/data/config.json
+    NOSTALGIAVISION_CONFIG=/app/data/config.json \
+    NOSTALGIAVISION_DATA=/app/data
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

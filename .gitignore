@@ -13,3 +13,12 @@ data/
 *.pyc
 __pycache__/
 .ipynb_checkpoints/
+
+# SQLite runtime state, including sidecars and local test environments
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+.venv/

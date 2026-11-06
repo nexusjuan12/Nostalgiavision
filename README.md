@@ -38,6 +38,7 @@ Then open **http://localhost:5000** — the browser opens automatically.
 
 ```bash
 cp .env.example .env     # then set PLEX_URL, PLEX_TOKEN and LIBRARY_IDS (all optional)
+mkdir -p data          # or create the directory chosen by DATA_PATH
 docker compose up -d --build
 ```
 
@@ -50,6 +51,9 @@ Then open **http://localhost:5000**. No `config.json` is needed: Plex settings c
 | `LIBRARY_IDS` | Library section IDs to sync, comma separated (e.g. `1,2`); pre-selected in Settings → Libraries |
 | `SCHEDULE_DAYS_AHEAD` | Days of schedule to generate (default `3`) |
 | `PUBLIC_URL` | Base URL written into the IPTV playlist and guide |
+| `DATA_PATH` | Compose only: persistent host directory (default `./data`); create it with ownership matching `APP_UID` / `APP_GID` |
+| `NOSTALGIAVISION_DATA` | Native Python: runtime directory for SQLite and uploaded logos (default `./data`); Docker sets `/app/data` |
+| `NOSTALGIAVISION_CONFIG` | Path to runtime config; Docker sets `/app/data/config.json` |
 | `HOST_PORT` | Compose only: port to publish on the host (default `5000`) |
 
 Notes:
@@ -67,7 +71,10 @@ Notes:
 ## Reverse proxy under a subpath
 
 Nostalgiavision can be served at a URL such as `https://example.com/ntv/`.
-Keep the trailing slash in the public URL and have the proxy strip `/ntv/`
+Set `PUBLIC_URL=https://example.com/ntv` (or `public_url` in config.json),
+including the subpath. This supplies the externally reachable scheme, host and prefix
+for feed, artwork and absolute HLS segment URLs. Keep the trailing slash when
+opening the web UI and have the proxy strip `/ntv/`
 before forwarding requests to Flask. For nginx:
 
 ```nginx
@@ -77,11 +84,15 @@ location /ntv/ {
     proxy_pass http://127.0.0.1:5000/;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_read_timeout 1h;
 }
 ```
 
 The trailing slash on `proxy_pass` is significant: it forwards `/ntv/api/guide`
-to Flask as `/api/guide`.
+to Flask as `/api/guide`. A WSGI mount that sets `SCRIPT_NAME=/ntv` is also
+supported. Forwarded headers are not trusted automatically; configure `PUBLIC_URL`
+when a proxy strips the prefix or changes the host/scheme.
 
 ---
 
@@ -143,11 +154,13 @@ The same two URLs are shown under **Settings → Jellyfin / IPTV**.
 
 **In Jellyfin:** Dashboard → Live TV → add an **M3U Tuner** with the playlist URL, then add an **XMLTV** TV guide data provider with the guide URL. Map channels if Jellyfin doesn't do it automatically. Use this machine's LAN address (not `localhost`) when Jellyfin runs elsewhere — or set `public_url` in `config.json` so the playlist always contains the right address.
 
-**How streaming works.** When a client tunes a channel, NostalgiaVision looks up what is airing right now, starts [ffmpeg](https://ffmpeg.org/) on that file at the correct offset, and rolls straight into the next program when it ends — so the stream never ends the way a single Plex playback would. Every program is re-encoded to the same H.264/AAC format (1280×720 by default) so mixed sources (AVI, MKV, SD, 1080p…) play back seamlessly. Details worth knowing:
+**How streaming works.** When a client tunes a channel, NostalgiaVision looks up what is airing right now, starts [ffmpeg](https://ffmpeg.org/) on that file at the correct offset, and rolls straight into the next program when it ends — so the stream never ends the way a single Plex playback would. Every program is re-encoded to the same H.264/AAC format (1280×720 by default) to help clients follow transitions between mixed sources (AVI, MKV, SD, 1080p…).
+Client buffering and source codecs can still affect transitions. Details worth knowing:
 
 - **ffmpeg must be installed** and on `PATH` (the Docker image includes it). The playlist and guide work without it; only the streams need it.
-- Channels share one ffmpeg process however many clients are watching, and it shuts down ~10 seconds after the last viewer leaves. Each *watched* channel costs roughly half a core to a full core of software encoding at the default 720p.
-- The stream pauses for about half a second at each program change while the next file opens.
+- Channels share one ffmpeg process however many clients are watching, and it shuts down ~10 seconds after the last viewer leaves. Each *watched* channel costs software transcoding CPU time. Cost depends on CPU, source codecs, resolution and
+  encoder preset; benchmark your hardware before enabling many simultaneous channels.
+- A program change starts a new ffmpeg process; opening and probing the next source can cause a brief interruption. Its duration depends on the source and host.
 - During a gap in the schedule — or if a file can't be played — the stream airs the test-pattern slate rather than disconnecting.
 - Media is read from Plex as the original file. ffmpeg never sees the Plex token: a command line is visible to every local user (`ps`, `docker top`), so ffmpeg reads through a small loopback-only gateway (`media_proxy.py`) that adds the token itself. What shows up in `ps` is only `http://127.0.0.1:<port>/<signature>/<path>`; the signature changes on every restart, covers just that one file, and the gateway refuses anything it didn't sign. Clients of the feed only ever see NostalgiaVision URLs.
 - **Who is watching:** the **Activity** tab lists every live connection — channel, what is airing, and each viewer's address, client (User-Agent), time connected and data sent (`GET /api/activity` returns the same as JSON). Connects and disconnects are also logged. Because NostalgiaVision reads the raw file from Plex, these streams do **not** appear in Plex's dashboard, and Jellyfin relays one connection per channel, so a Jellyfin viewer appears here as the Jellyfin server's address rather than as the person watching.
@@ -156,6 +169,28 @@ The same two URLs are shown under **Settings → Jellyfin / IPTV**.
   (a rebuild regenerates everything that hasn't aired yet, so Jellyfin's guide will pick up the new lineup on its next refresh).
 
 The optional `public_url` and `iptv` settings are listed under [Configuration](#configuration).
+
+---
+
+## Media source and access
+
+**Plex remains the media source.** Library discovery, metadata and original media files
+come from your configured Plex Media Server. Jellyfin can consume NostalgiaVision's
+M3U playlist and XMLTV guide as a Live TV tuner; this does not add Jellyfin library
+sync or make Jellyfin a source backend.
+
+**Use a trusted network only.** The web UI, management API, feeds and media routes
+have no application authentication. Hiding the Plex token does not authenticate
+viewers: anyone who can reach this app can watch its media and change settings.
+Keep it on a trusted LAN or private VPN. Public access needs an authentication layer
+that covers feeds and media as well as the UI, or feed authentication implemented
+in the application. Never publish the port directly to the Internet.
+
+Runtime `config.json`, databases, uploaded logos and `.env` are intentionally ignored
+and excluded from Docker builds. Copy the sanitized examples for a new installation.
+Existing tracked state was removed without rewriting Git history; historical copies
+remain in old commits. Rotate any real credentials previously committed. Back up
+runtime state separately and protect `.env` and config file permissions.
 
 ---
 
@@ -247,3 +282,15 @@ Each predefined channel filters your library using one or more of:
 | Collection | Plex collection names |
 
 Channels with no matching content show nothing in the guide — use **Hide** on the Channels tab to remove them from view.
+
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Install the requirements first. With `ffmpeg` and `ffprobe` available, tests generate
+small synthetic clips and exercise program transitions, late joining, media proxying
+and relay cleanup. Without them, media tests are skipped. Tests use temporary SQLite
+databases and a fake Plex server; they do not verify a real Plex/Jellyfin installation.

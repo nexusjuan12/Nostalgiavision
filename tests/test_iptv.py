@@ -403,7 +403,7 @@ class RelayTests(unittest.TestCase):
         ])
         relay, data = self._capture(8, 4, lambda prog: prog["media_part_key"])
 
-        self.assertGreater(len(data), 50_000)               # kept producing video
+        self.assertGreater(len(data), streamer.CHUNK_BYTES)  # static slate bitrate varies by ffmpeg version
         _, streams = self._probe_streams(data)
         self.assertEqual([s["codec_name"] for s in streams], ["h264", "aac"])
 

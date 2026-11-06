@@ -42,6 +42,19 @@ BROWSER_PREFIXES = {
 _URI_ATTR = re.compile(r'URI="([^"]*)"')
 
 
+def valid_media_path(path: str, prefix: str) -> bool:
+    """Reject traversal and encoded separators before requests/Plex can normalize them."""
+    decoded = path
+    for _ in range(4):
+        value = unquote(decoded)
+        if value == decoded:
+            break
+        decoded = value
+    return (decoded.startswith(prefix)
+            and not any(c in decoded for c in "\\\r\n\x00?#")
+            and not any(segment in (".", "..", "") for segment in decoded[1:].split("/")))
+
+
 def open_plex(base_url: str, token: str, plex_path: str, query=(), range_header: str | None = None):
     """Start streaming a GET of a Plex path with the token added. Caller closes the response.
 
@@ -52,26 +65,25 @@ def open_plex(base_url: str, token: str, plex_path: str, query=(), range_header:
     params.append(("X-Plex-Token", token))
     headers = {"Range": range_header} if range_header else {}
     return requests.get(f"{base_url}{quote(plex_path, safe='/:')}", params=params,
-                        headers=headers, stream=True, timeout=(5, 30))
+                        headers=headers, stream=True, timeout=(5, 30), allow_redirects=False)
 
 
-def _browser_uri(uri: str, plex_netloc: str) -> str:
+def _browser_uri(uri: str, plex_netloc: str, app_prefix: str = "") -> str:
     """Make one URI from a Plex playlist routable through /plex/<kind>/ and free of the token."""
     parts = urlsplit(uri)
     query = urlencode([(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
                        if k.lower() != "x-plex-token"])
     path = parts.path
-    if parts.scheme or parts.netloc:
-        if parts.netloc != plex_netloc:
-            return uri                              # someone else's URL — not ours to touch
+    if not parts.netloc or parts.netloc == plex_netloc:
         for kind, prefix in BROWSER_PREFIXES.items():
             if path.startswith(prefix):
-                return urlunsplit(("", "", f"/plex/{kind}/{path[len(prefix):]}", query, ""))
-        return urlunsplit((parts.scheme, parts.netloc, path, query, ""))   # at least drop the token
-    return urlunsplit(("", "", path, query, ""))
+                return urlunsplit(("", "", f"{app_prefix}/plex/{kind}/{path[len(prefix):]}", query, ""))
+    # Relative segment URIs retain their relationship to the proxied playlist.
+    # Drop credentials from every URI, even unexpected CDN URLs.
+    return urlunsplit((parts.scheme, parts.netloc, path, query, ""))
 
 
-def rewrite_playlist(text: str, plex_base_url: str) -> str:
+def rewrite_playlist(text: str, plex_base_url: str, app_prefix: str = "") -> str:
     """Rewrite an HLS playlist from Plex so a browser can follow it through /plex/<kind>/.
 
     Plex normally uses relative URIs, which already resolve under the proxied path; this
@@ -82,9 +94,9 @@ def rewrite_playlist(text: str, plex_base_url: str) -> str:
     out = []
     for line in text.splitlines():
         if line.startswith("#"):
-            line = _URI_ATTR.sub(lambda m: f'URI="{_browser_uri(m.group(1), netloc)}"', line)
+            line = _URI_ATTR.sub(lambda m: f'URI="{_browser_uri(m.group(1), netloc, app_prefix)}"', line)
         elif line.strip():
-            line = _browser_uri(line.strip(), netloc)
+            line = _browser_uri(line.strip(), netloc, app_prefix)
         out.append(line)
     return "\n".join(out) + "\n"
 
@@ -117,6 +129,8 @@ class MediaProxy:
 
     def url_for(self, plex_path: str) -> str:
         """Local URL ffmpeg can open for a Plex path such as /library/parts/1/2/file.mkv."""
+        if not valid_media_path(plex_path, BROWSER_PREFIXES["part"]):
+            raise ValueError("Not a Plex media part path")
         port = self._ensure_started().server_port
         return f"http://127.0.0.1:{port}/{self._sign(plex_path)}{quote(plex_path, safe='/')}"
 
@@ -125,7 +139,8 @@ class MediaProxy:
         sig, _, rest = urlsplit(request_path).path.lstrip("/").partition("/")
         plex_path = unquote("/" + rest)
         # Compare as bytes: compare_digest rejects non-ASCII str, and the request line is untrusted.
-        if hmac.compare_digest(sig.encode(), self._sign(plex_path).encode()):
+        if (valid_media_path(plex_path, BROWSER_PREFIXES["part"])
+                and hmac.compare_digest(sig.encode(), self._sign(plex_path).encode())):
             return plex_path
         return None
 
@@ -159,6 +174,8 @@ class _Handler(BaseHTTPRequestHandler):
             return self.send_error(502)
 
         with upstream:
+            if upstream.status_code >= 300:
+                return self.send_error(502 if upstream.is_redirect else upstream.status_code)
             self.send_response(upstream.status_code)
             for name in _RELAYED_HEADERS:
                 if name in upstream.headers:

@@ -7,7 +7,6 @@ services:
         APP_UID: ${APP_UID:-1000}
         APP_GID: ${APP_GID:-1000}
     image: nostalgiavision:latest
-    container_name: nostalgiavision
     restart: unless-stopped
     ports:
       # Only the published (host) side is configurable; the app always listens on 5000 inside.
@@ -26,6 +25,4 @@ services:
     volumes:
       # SQLite library cache, schedules, custom channels, uploaded logos, and config.json
       # (written by the Settings page; optional if you use the variables above).
-      #- ./data:/app/data
-      - /var/lib/nostalgiavision:/app/data
-      #- ./config.json:/app/data/config.json
+      - ${DATA_PATH:-./data}:/app/data

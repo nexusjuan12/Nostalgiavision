@@ -32,7 +32,7 @@ import threading
 import time
 import uuid
 from dataclasses import asdict
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from flask import (Flask, Response, abort, jsonify, render_template, request,
                    send_from_directory)
@@ -152,7 +152,7 @@ def _plex_upstream() -> tuple | None:
 # its command line (visible to every local user via `ps`).
 _media_proxy = media_proxy.MediaProxy(_plex_upstream)
 
-LOGOS_DIR = os.path.join(os.path.dirname(__file__), "data", "logos")
+LOGOS_DIR = os.path.join(db.DATA_DIR, "logos")
 SLATE_IMAGE = os.path.join(os.path.dirname(__file__), "image", "test-pattern.png")
 
 
@@ -819,27 +819,18 @@ def api_thumb():
     if not client:
         return "", 401
 
-    # Normalise: extract just the path component from whatever we were given,
-    # then rebuild a clean authenticated URL using the configured server.
-    if raw.startswith("http://") or raw.startswith("https://"):
-        bare_path = urlparse(raw).path   # strip host + query params
-    else:
-        bare_path = raw
-
-    url = f"{client.base_url}{bare_path}?X-Plex-Token={client.token}"
-
+    bare_path = urlparse(raw).path
+    if not media_proxy.valid_media_path(bare_path, "/library/metadata/"):
+        return "", 400
     try:
-        resp = client._session.get(url, timeout=(5, 10))
-        resp.raise_for_status()
-        content_type = resp.headers.get("Content-Type", "image/jpeg")
-        return FlaskResponse(
-            resp.content,
-            status=200,
-            content_type=content_type,
-            headers={"Cache-Control": "public, max-age=86400"},
-        )
-    except Exception as exc:
-        log.warning("Thumb proxy failed for %s: %s", bare_path, exc)
+        with media_proxy.open_plex(client.base_url, client.token, bare_path) as resp:
+            if resp.status_code != 200:
+                return "", 502
+            return FlaskResponse(
+                resp.content, content_type=resp.headers.get("Content-Type", "image/jpeg"),
+                headers={"Cache-Control": "private, max-age=86400"})
+    except requests.RequestException as exc:
+        log.warning("Thumb proxy failed (%s)", type(exc).__name__)
         return "", 502
 
 
@@ -857,7 +848,7 @@ def plex_media(kind: str, subpath: str):
     Only the paths in media_proxy.BROWSER_PREFIXES are reachable — not the rest of the Plex API.
     """
     prefix = media_proxy.BROWSER_PREFIXES.get(kind)
-    if prefix is None or any(seg in (".", "..") for seg in subpath.split("/")):
+    if prefix is None or not media_proxy.valid_media_path(prefix + subpath, prefix):
         abort(404)
     target = _plex_upstream()
     if not target:
@@ -872,11 +863,17 @@ def plex_media(kind: str, subpath: str):
         log.warning("Plex proxy failed for %s (%s)", plex_path, type(exc).__name__)
         return "", 502
 
+    if upstream.status_code >= 300:
+        status = 502 if upstream.is_redirect else upstream.status_code
+        upstream.close()
+        return "", status
+
     content_type = upstream.headers.get("Content-Type", "").lower()
     if upstream.status_code == 200 and ("mpegurl" in content_type or subpath.endswith(".m3u8")):
         with upstream:
             playlist = media_proxy.rewrite_playlist(
-                upstream.content.decode("utf-8", "replace"), target[0])
+                upstream.content.decode("utf-8", "replace"), target[0],
+                request.script_root or urlsplit(_load_config().get("public_url") or "").path.rstrip("/"))
         return Response(playlist, mimetype="application/vnd.apple.mpegurl",
                         headers={"Cache-Control": "no-store"})
 
